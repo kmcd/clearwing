@@ -1,0 +1,13 @@
+Instructions for creating the data sets.
+
+1. Unzip the contents of nasdaq_100 into the n100 directory.
+2. Unzip the contents of qqq.zip into the n100 directory.
+3. Run convert2csv.rb. It will merge the 140+ tables into a single table. It
+   will construct a single csv (qqq_state.csv) for all 1-minute periods from
+   the qqq quotes file that occured during normal trading hours.*
+4. Then run random_split.rb. It will create 5 files qqq_state_0.csv through
+   qqq_state_4.csv.
+
+
+* Normal trading hours 930-1600. No effort toward identifying partial trading
+  days.
