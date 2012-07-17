@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from dateutil.rrule import rrule, DAILY
 import csv
 import os
+import glob
 
 trading_days = []
 for trading_day in rrule(DAILY, dtstart=date(1999,03,10), until=date(2011,11,01)):
@@ -25,12 +26,14 @@ foo = {'bar':[]}
 
 for nasdaq_100_file in glob.glob('./data/nasdaq_100/*'):
     f = csv.reader(open(nasdaq_100_file))
-    for row in f:
-      if row[0] == '19990310':
-        foo['bar'].append('baz')
-      # if date in training_days.to_string
-      #   append to training_days[day]
-    
+    try:
+        for row in f:
+          if row[0] == '19990310':
+            foo['bar'].append('baz')
+          # if date in training_days.to_string
+          #   append to training_days[day]
+    except:
+        print 'error in %s' % nasdaq_100_file
 # Save as RANDOM_DATE_training.csv
 
 
