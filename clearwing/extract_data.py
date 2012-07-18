@@ -32,9 +32,10 @@ def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
     s = StringIO()
     with open(filepath) as f:
         for line in f:
-            x = line.partition(',')
-            y = x[2].partition(',')
-            if x[0] in dates and y[0] in VALID_TIMES:
+            vals = line.split(',')
+            if len(vals) != 10:
+                continue
+            if vals[0] in dates and vals[1] in VALID_TIMES:
                 s.write(line)
     s.seek(0)
     if not s.getvalue():
