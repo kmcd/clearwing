@@ -4,8 +4,8 @@ setup(
     version='1.0',
     packages=find_packages(),
     install_requires=[
-        'numpy',
-        'pandas',
+        'numpy==1.6.2',
+        'pandas==0.8.0',
     ]
 )
 
