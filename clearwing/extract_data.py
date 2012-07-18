@@ -37,7 +37,8 @@ def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
             if x[0] in dates and y[0] in VALID_TIMES:
                 s.write(line)
     s.seek(0)
-
+    if not s.getvalue():
+        return DataFrame()
     data = read_csv(
                 s,
                 names=COLUMN_NAMES,

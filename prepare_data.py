@@ -7,6 +7,7 @@ from clearwing import extract_data
 import csv
 import os
 import glob
+import sys
 
 trading_days = []
 for trading_day in rrule(DAILY, dtstart=date(1999,03,10), until=date(2011,11,01)):
@@ -23,10 +24,14 @@ for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
     print '\n\nloading %s' % nasdaq_100_file
     try:
         df = extract_data.start(nasdaq_100_file, training_set)
-        print 'showing first and last two rows'
-        print df.head(2)
-        print df.tail(2)
+        if len(df.index) == 0:
+            print 'training set is empty'
+        else:
+            print 'showing first and last two rows'
+            print df.head(2)
+            print df.tail(2)
     except:
+        print sys.exc_info()
         print 'error in %s' % nasdaq_100_file
 # Save as RANDOM_DATE_training.csv
 
