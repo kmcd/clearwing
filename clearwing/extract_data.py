@@ -1,13 +1,13 @@
 from pandas import *
 from datetime import datetime, timedelta
-import numpy as np
-import utils
+from cStringIO import StringIO
 import random
 import glob
 import dateutil
 import time
 
 COLUMN_NAMES = ['Date','Time','Open','High','Low','Close','Volume','Splits','Earnings','Dividends']
+VALID_TIMES = [str(x) for x in range(930,1601)]
 
 def date_time_merger(row):
     """
@@ -18,35 +18,34 @@ def date_time_merger(row):
     return dateutil.parser.parse(row)
 
 
-def start():
+def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
     """
     this function performs extraction of data as described in clearwing/wiki
     
-    Note: as of this writing, this function is used for testing speed of parsing data
+    Optimization:
+        Read and filter data first as text
+        Then convert to DataFrame
     """
-    start_time = time.time()
-    print __file__
-    print 'loading table_qqq.csv %s' % start_time
-    chunker = read_csv(
-                    'data/qqq/table_qqq.csv',
-                    names=COLUMN_NAMES,
-                    sep=',',
-                    # uncomment next line to enable parsing of date only
-                    parse_dates=[('Date')],
-                    
-                    # uncomment next two lines to enable parsing of both date and time
-                    #parse_dates=[('Date','Time')],
-                    #date_parser=date_time_merger,
-                    
-                    # uncomment next line to enable 'by chunk' parsing
-                    chunksize=100000,
-                    )
-                   
-    # uncomment next two lines if 'by chunk' is enabled
-    for chunk in chunker:
-        chunk.head()
-    print 'done'
     
-    print time.time() - start_time
+    start_time = time.time() # used only for measuring elapsed time
 
+    s = StringIO()
+    with open(filepath) as f:
+        for line in f:
+            x = line.partition(',')
+            y = x[2].partition(',')
+            if x[0] in dates and y[0] in VALID_TIMES:
+                s.write(line)
+    s.seek(0)
+
+    data = read_csv(
+                s,
+                names=COLUMN_NAMES,
+                sep=',',
+                parse_dates=[('Date','Time')],
+                date_parser=date_time_merger,
+           )
+
+    print 'done in %fs' % (time.time() - start_time)
+    return data
 
