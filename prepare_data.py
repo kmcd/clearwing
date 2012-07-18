@@ -24,7 +24,7 @@ for day in training_set:
 
 foo = {'bar':[]}
 
-for nasdaq_100_file in glob.glob('./data/nasdaq_100/*'):
+for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
     print 'loading %s' % nasdaq_100_file
     f = csv.reader(open(nasdaq_100_file))
     try:
