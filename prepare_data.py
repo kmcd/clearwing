@@ -1,17 +1,19 @@
 # Get data by date
 # Pick a day at random from data set
 from random import sample
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 from dateutil.rrule import rrule, DAILY
-from clearwing import extract_data
+from clearwing import extract_data, utils
 import csv
 import os
 import glob
 import sys
 
+
+
 trading_days = []
-for trading_day in rrule(DAILY, dtstart=date(1999,03,10), until=date(2011,11,01)):
-    trading_days.append(trading_day)
+for trading_day in utils.get_trading_days():
+    trading_days.append(datetime.strptime(trading_day, '%Y%m%d'))
 
 start_day = sample(trading_days, 1)[0]
 end_day = start_day + timedelta(days=59)
