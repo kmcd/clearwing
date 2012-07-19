@@ -19,7 +19,7 @@ end_day = start_day + timedelta(days=59)
 training_set = []
 for training_day in rrule(DAILY, dtstart=start_day, until=end_day):
     training_set.append(training_day.strftime('%Y%m%d'))
-
+    
 for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
     print '\n\nloading %s' % nasdaq_100_file
     try:
@@ -27,9 +27,9 @@ for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
         if len(df.index) == 0:
             print 'training set is empty'
         else:
-            print 'showing first and last two rows'
-            print df.head(2)
-            print df.tail(2)
+            print 'showing first and last three rows'
+            print df.head(3)
+            print df.tail(3)
     except:
         print sys.exc_info()
         print 'error in %s' % nasdaq_100_file

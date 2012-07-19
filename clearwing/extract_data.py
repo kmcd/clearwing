@@ -7,7 +7,12 @@ import dateutil
 import time
 
 COLUMN_NAMES = ['Date','Time','Open','High','Low','Close','Volume','Splits','Earnings','Dividends']
-VALID_TIMES = [str(x) for x in range(930,1601)]
+VALID_TIMES = range(930,960)
+for x in range(1000,1600,100):
+    for y in range(0,60):
+        VALID_TIMES = VALID_TIMES + [x+y]
+VALID_TIMES = VALID_TIMES + [1600]
+VALID_TIMES = [str(x) for x in VALID_TIMES]
 
 def date_time_merger(row):
     """
@@ -47,7 +52,21 @@ def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
                 parse_dates=[('Date','Time')],
                 date_parser=date_time_merger,
            )
-
+    data = data.set_index('Date_Time')
+    
+    slices = []
+    for date in dates:
+        start_date = datetime.strptime(date,'%Y%m%d').replace(hour=9, minute=30)
+        data_slice = data.reindex(
+                        date_range(
+                            start_date, 
+                            start_date + timedelta(hours=6, minutes=30),
+                            freq='Min',),
+                        method='pad',
+                     )
+        slices = slices + [data_slice]
+        
+        
     print 'done in %fs' % (time.time() - start_time)
-    return data
+    return concat(slices).pct_change()
 
