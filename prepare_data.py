@@ -4,6 +4,7 @@ from random import sample
 from datetime import datetime, date, timedelta
 from dateutil.rrule import rrule, DAILY
 from clearwing import extract_data, utils
+from pandas import *
 import csv
 import os
 import glob
@@ -16,11 +17,8 @@ for trading_day in utils.get_trading_days():
     trading_days.append(datetime.strptime(trading_day, '%Y%m%d'))
 
 start_day = sample(trading_days, 1)[0]
-end_day = start_day + timedelta(days=59)
-
-training_set = []
-for training_day in rrule(DAILY, dtstart=start_day, until=end_day):
-    training_set.append(training_day.strftime('%Y%m%d'))
+training_set = date_range(start_day, periods=60, freq='B')
+training_set = [date.date().strftime('%Y%m%d') for date in training_set]
     
 for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
     print '\n\nloading %s' % nasdaq_100_file
