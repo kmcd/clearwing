@@ -25,7 +25,8 @@ def date_time_merger(row):
 
 def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
     """
-    this function performs extraction of data as described in clearwing/wiki
+    this function performs extraction of data and conversion from stock prices
+    to returns
     
     Optimization:
         Read and filter data first as text
@@ -54,6 +55,7 @@ def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
            )
     data = data.set_index('Date_Time')
     
+    # fill-in missing rows per minute of the day from 09:30 to 16:00
     slices = []
     for date in dates:
         start_date = datetime.strptime(date,'%Y%m%d').replace(hour=9, minute=30)
@@ -65,7 +67,6 @@ def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
                         method='pad',
                      )
         slices = slices + [data_slice]
-        
         
     print 'done in %fs' % (time.time() - start_time)
     return concat(slices).pct_change()
