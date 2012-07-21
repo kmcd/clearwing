@@ -51,8 +51,6 @@ for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
     except:
         print sys.exc_info()
         print 'error in %s' % nasdaq_100_file
-    if len(close_mat) == 15:
-        break    
         
 close_mat = concat(close_mat, axis=1, keys=names)
 #print close_mat.head()
