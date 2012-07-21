@@ -6,6 +6,7 @@ setup(
     install_requires=[
         'numpy==1.6.2',
         'pandas==0.8.0',
+        'matplotlib',
     ]
 )
 
