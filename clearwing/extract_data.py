@@ -55,7 +55,7 @@ def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
            )
     data = data.set_index('Date_Time')
     
-    # fill-in missing rows per minute of the day from 09:30 to 16:00
+    # fill-in missing rows per minute of each day from 09:30 to 16:00
     slices = []
     for date in dates:
         start_date = datetime.strptime(date,'%Y%m%d').replace(hour=9, minute=30)

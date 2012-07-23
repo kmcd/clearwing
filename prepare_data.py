@@ -3,7 +3,7 @@
 from random import sample
 from datetime import datetime, date, timedelta
 from dateutil.rrule import rrule, DAILY
-from clearwing import extract_data, utils
+from clearwing import extract_data, utils, select_model
 from pandas import *
 import numpy as np
 import csv
@@ -64,9 +64,12 @@ for i in range(0,len(variance_matrix)):
     top_vars.append(top_vars_day)
     
 top_vars = concat(top_vars, keys=variance_matrix.index)
-print top_vars
-print top_vars.head(30)
-print top_vars.tail(30)
+print top_vars.head(3)
+print top_vars.tail(3)
+
+print 'mahalanobis distance between 1st and 2nd row is %s' % \
+        select_model.mahalanobis_dist(close_mat.ix[1,:], close_mat.ix[2,:], close_mat)
+
     
 # Save as RANDOM_DATE_training.csv
 
