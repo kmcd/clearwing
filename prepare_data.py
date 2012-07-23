@@ -22,7 +22,7 @@ start_day = sample(trading_days, 1)[0]
 training_set = date_range(start_day, periods=60, freq='B')
 training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
-close_mat = []  # matrix of 'Close' columns from each nasdaq component
+nasdaq_comp = []  # compilation of 'High', 'Low' and 'Close' columns from each nasdaq component
 names = []      # list of nasdaq component names
 
 for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
@@ -33,23 +33,24 @@ for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
         if len(df.index) == 0:  # discard empty training set
             print 'training set is empty'
         else:
-            df = df.ix[1:,'Close']  # remove unused rows and columns
+            df = df.ix[:,'High':'Close']  # remove unused rows and columns
             print 'showing first and last three rows'
             print df.head(3)
             print df.tail(3)
-            close_mat.append(df)
+            nasdaq_comp.append(df)
             names.append(nasdaq_100_file.rpartition('_')[2][:-4])
     except:
         print sys.exc_info()
         print 'error in %s' % nasdaq_100_file
     # for dev purposes only
-    #if len(close_mat) == 3:
-    #    break
+    if len(nasdaq_comp) == 15:
+        break
         
-close_mat = concat(close_mat, axis=1, keys=names)
+nasdaq_comp_close = [df.ix[:,'Close'] for df in nasdaq_comp]
+nasdaq_comp_close = concat(nasdaq_comp_close, axis=1, keys=names, join='inner')
 
 # matrix to store all the variance computed by PCA
-variance_matrix = utils.get_pca_variance(close_mat, training_set[:30])
+variance_matrix = utils.get_pca_variance(nasdaq_comp_close, training_set[:30])
 
 top_vars = []   # matrix of top 10 dimensions with highest variance per day
 for i in range(0,len(variance_matrix)):
@@ -64,11 +65,15 @@ for i in range(0,len(variance_matrix)):
     top_vars.append(top_vars_day)
     
 top_vars = concat(top_vars, keys=variance_matrix.index)
+print '\n\nTop 10 variance per day'
 print top_vars.head(3)
 print top_vars.tail(3)
 
-print 'mahalanobis distance between 1st and 2nd row is %s' % \
-        select_model.mahalanobis_dist(close_mat.ix[1,:], close_mat.ix[2,:], close_mat)
+print '\nmahalanobis distance between 1st and 2nd row is %s' % \
+        select_model.mahalanobis_dist(
+                nasdaq_comp_close.ix[1,:],
+                nasdaq_comp_close.ix[2,:],
+                nasdaq_comp_close)
 
     
 # Save as RANDOM_DATE_training.csv

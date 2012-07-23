@@ -7,7 +7,7 @@ def get_cov_inv(df):
     """
     return linalg.inv(df.cov())
     
-def mahalanobis_dist(u, v, VI):
+def mahalanobis_dist(u, v, df):
     """
     returns the mahalanobis distance as computed by scipy
     """
