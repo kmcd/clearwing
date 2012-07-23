@@ -3,7 +3,7 @@
 from random import sample
 from datetime import datetime, date, timedelta
 from dateutil.rrule import rrule, DAILY
-from clearwing import extract_data, utils, select_model
+from clearwing import extract_data, select_model
 from pandas import *
 import numpy as np
 import csv
@@ -51,7 +51,7 @@ nasdaq_comp_close = [df.ix[:,'Close'] for df in nasdaq_comp.values()]
 nasdaq_comp_close = concat(nasdaq_comp_close, axis=1, keys=names, join='inner')
 
 # matrix to store all the variance computed by PCA
-variance_matrix = utils.get_pca_variance(nasdaq_comp_close, training_set[:30])
+variance_matrix = extract_data.get_pca_variance(nasdaq_comp_close, training_set[:30])
 
 top_vars = []   # matrix of top 10 dimensions with highest variance per day
 for i in range(0,len(variance_matrix)):
