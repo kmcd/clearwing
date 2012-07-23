@@ -69,13 +69,3 @@ print top_vars.tail(3)
 
 print 'mahalanobis distance between 1st and 2nd row is %s' % \
         select_model.mahalanobis_dist(close_mat.ix[1,:], close_mat.ix[2,:], close_mat)
-
-    
-# Save as RANDOM_DATE_training.csv
-
-
-# Expand & normalise data set
-# For each nasdaq 100 stock
-#   - expand out h->c, o->c ...
-#   - normalise each as %difference from last bar
-# Write to RANDOM_DATE_training_normalised.csv
