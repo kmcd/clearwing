@@ -22,7 +22,7 @@ start_day = sample(trading_days, 1)[0]
 training_set = date_range(start_day, periods=60, freq='B')
 training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
-nasdaq_comp = []  # compilation of 'High', 'Low' and 'Close' columns from each nasdaq component
+nasdaq_comp = {}  # compilation of 'High', 'Low' and 'Close' columns from each nasdaq component
 names = []      # list of nasdaq component names
 
 for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
@@ -37,16 +37,17 @@ for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
             print 'showing first and last three rows'
             print df.head(3)
             print df.tail(3)
-            nasdaq_comp.append(df)
-            names.append(nasdaq_100_file.rpartition('_')[2][:-4])
+            nasdaq_name = nasdaq_100_file.rpartition('_')[2][:-4]
+            names.append(nasdaq_name)
+            nasdaq_comp[nasdaq_name] = df
     except:
         print sys.exc_info()
         print 'error in %s' % nasdaq_100_file
     # for dev purposes only
-    if len(nasdaq_comp) == 15:
-        break
+    #if len(nasdaq_comp) == 3:
+    #    break
         
-nasdaq_comp_close = [df.ix[:,'Close'] for df in nasdaq_comp]
+nasdaq_comp_close = [df.ix[:,'Close'] for df in nasdaq_comp.values()]
 nasdaq_comp_close = concat(nasdaq_comp_close, axis=1, keys=names, join='inner')
 
 # matrix to store all the variance computed by PCA
@@ -75,7 +76,10 @@ print '\nmahalanobis distance between 1st and 2nd row is %s' % \
                 nasdaq_comp_close.ix[2,:],
                 nasdaq_comp_close)
 
-    
+print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=10,minute=0))
+print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=11,minute=0))
+print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=12,minute=0))
+print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=13,minute=0))
 # Save as RANDOM_DATE_training.csv
 
 
