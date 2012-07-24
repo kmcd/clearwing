@@ -80,12 +80,3 @@ print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=10,minute
 print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=11,minute=0))
 print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=12,minute=0))
 print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=13,minute=0))
-# Save as RANDOM_DATE_training.csv
-
-
-# Expand & normalise data set
-# For each nasdaq 100 stock
-#   - expand out h->c, o->c ...
-#   - normalise each as %difference from last bar
-# Write to RANDOM_DATE_training_normalised.csv
-
