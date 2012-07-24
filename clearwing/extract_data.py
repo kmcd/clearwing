@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from cStringIO import StringIO
 from matplotlib import mlab
 from pandas.tseries.offsets import BDay
-from pandas import *
 import dateutil
 import time
 
