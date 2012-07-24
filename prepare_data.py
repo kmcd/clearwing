@@ -70,7 +70,6 @@ print '\n\nTop 10 variance per day'
 print top_vars.head(3)
 print top_vars.tail(3)
 
-<<<<<<< HEAD
 print '\nmahalanobis distance between 1st and 2nd row is %s' % \
         select_model.mahalanobis_dist(
                 nasdaq_comp_close.ix[1,:],
@@ -89,7 +88,4 @@ print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=13,minute
 #   - expand out h->c, o->c ...
 #   - normalise each as %difference from last bar
 # Write to RANDOM_DATE_training_normalised.csv
-=======
-print 'mahalanobis distance between 1st and 2nd row is %s' % \
-        select_model.mahalanobis_dist(close_mat.ix[1,:], close_mat.ix[2,:], close_mat)
->>>>>>> f8a3c96704cfc838f4978084e31533947d02c75f
+
