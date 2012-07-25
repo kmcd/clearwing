@@ -2,7 +2,6 @@
 # Pick a day at random from data set
 from random import sample
 from datetime import datetime, date, timedelta
-from dateutil.rrule import rrule, DAILY
 from clearwing import extract_data, select_model
 from pandas import *
 import numpy as np
@@ -17,7 +16,7 @@ dev_mode = False
 
 # Generate series of business days from QQQ earliest date to QQQ latest date
 qqq_start = datetime(1999,3,10)
-qqq_end = datetime(2012,6,7) + timedelta(days=-60)
+qqq_end = datetime(2012,7,19) + timedelta(days=-60)
 trading_days = date_range(qqq_start, qqq_end, freq='B')
 
 # Pick a date at random
