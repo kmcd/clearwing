@@ -22,13 +22,13 @@ def date_time_merger(row):
     row = row[:-2] + ':' + row[-2:]
     return dateutil.parser.parse(row)
     
-def get_pca_variance(df, dates):
+def get_pca_variance(df, dates, loopback=30):
     """
     computes the variance of each dimension per date (with 30 days loopback)
     """
     result = {}
     for day in dates:
-        end_day = day+BDay(29)
+        end_day = day+BDay(loopback-1)
         sd = mlab.PCA(df.ix[day:end_day]).sigma
         variance = [x**2 for x in sd]
         result[end_day] = Series(variance, index=df.columns)
