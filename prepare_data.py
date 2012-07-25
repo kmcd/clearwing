@@ -26,6 +26,7 @@ training_set = date_range(start_day, periods=60, freq='B')
 training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
 components = {}
+qqq_components = []
 day_count = 0
 
 for date in training_set_str:
@@ -49,8 +50,15 @@ for date in training_set_str:
                     components[name].append(df)
                 if dev_mode:
                     ct = ct + 1
-                    if ct == 7:
+                    if ct == 15:
                         break
+        except:
+            print sys.exc_info()
+            print 'error in %s' % nasdaq_100_file
+    for qqq_file in glob.glob(os.path.join('data','qqq_dir','allstocks_'+date,'table_qqq.csv')):
+        try:
+            df = extract_data.start(qqq_file, date, idx)
+            qqq_components.append(df)
         except:
             print sys.exc_info()
             print 'error in %s' % nasdaq_100_file
@@ -58,6 +66,11 @@ for date in training_set_str:
 nasdaq_comp = {}
 for k, v in components.items():
     nasdaq_comp[k] = concat(v)
+qqq = concat(qqq_components)
+
+print '\n\n>>> QQQ'
+print qqq.head()
+print qqq.tail()
 
 nasdaq_comp_close = [df.ix[1:,'% Change(close)'] for df in nasdaq_comp.values()]
 nasdaq_comp_close = concat(nasdaq_comp_close, axis=1, keys=components.keys(), join='inner')
@@ -73,7 +86,7 @@ top_vars = []   # matrix of top 10 dimensions with highest variance per day
 for i in range(0,len(variance_matrix)):
     row = variance_matrix.ix[i,:]
     row = row / row.sum() * 100.0
-    new_index = row.index[np.argsort(row)[::-1]] # descending order of variances
+    new_index = row.index[np.argsort(row)[:-11:-1]] # descending order of variances
     row = row.reindex(index=new_index)
     top_vars_day = concat(
                         [row, row.cumsum()],
@@ -94,8 +107,8 @@ pct = 85.0
 result = select_model.get_top_dims(nasdaq_comp_close, top_vars, training_set[30], pct)
 print '\n\n>>> Nasdaq components within %f%% cumulative variance on day 30' % pct
 print result.head()
-
 #import time
+
 #start_time = time.time()
 #tree = select_model.knn(result, 7)
 #print tree
