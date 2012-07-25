@@ -65,6 +65,7 @@ def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
                 date_parser=date_time_merger,
            )
     data = data.set_index('Date_Time')
+    data = data.ix[:,['High','Low','Close']] # remove unused rows and columns
     data['% Change(close)'] = data['Close'].pct_change()
     
     # fill-in missing rows per minute of each day from 09:30 to 16:00

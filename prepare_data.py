@@ -33,7 +33,6 @@ for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
         if len(df.index) == 0:  # discard empty training set
             print 'training set is empty'
         else:
-            df = df.ix[:,['High','Low','Close','% Change(close)']]  # remove unused rows and columns
             print 'showing first and last three rows'
             print df.head(3)
             print df.tail(3)
@@ -47,7 +46,7 @@ for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
     #if len(nasdaq_comp) == 3:
     #    break
         
-nasdaq_comp_close = [df.ix[:,'% Change(close)'] for df in nasdaq_comp.values()]
+nasdaq_comp_close = [df.ix[1:,'% Change(close)'] for df in nasdaq_comp.values()]
 nasdaq_comp_close = concat(nasdaq_comp_close, axis=1, keys=names, join='inner')
 
 # matrix to store all the variance computed by PCA
