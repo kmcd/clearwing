@@ -12,7 +12,8 @@ import glob
 import sys
 
 # for debugging/printing purposes
-set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
+set_printoptions(max_rows=30, max_columns=200, max_colwidth=10000)
+dev_mode = False
 
 # Generate series of business days from QQQ earliest date to QQQ latest date
 qqq_start = datetime(1999,3,10)
@@ -25,32 +26,46 @@ start_day = sample(trading_days, 1)[0]
 training_set = date_range(start_day, periods=60, freq='B')
 training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
-nasdaq_comp = {}  # compilation of 'High', 'Low' and 'Close' columns from each nasdaq component
-names = []      # list of nasdaq component names
+components = {}
+day_count = 0
 
-for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
-    print '\n'
-    print 'loading %d: %s' % (len(names)+1,nasdaq_100_file)
-    try:
-        df = extract_data.start(nasdaq_100_file, training_set_str)
-        if len(df.index) == 0:  # discard empty training set
-            print 'training set is empty'
-        else:
-            print 'showing first and last three rows'
-            print df.head(3)
-            print df.tail(3)
-            nasdaq_name = nasdaq_100_file.rpartition('_')[2][:-4]
-            names.append(nasdaq_name)
-            nasdaq_comp[nasdaq_name] = df
-    except:
-        print sys.exc_info()
-        print 'error in %s' % nasdaq_100_file
-    # for dev purposes only
-    #if len(nasdaq_comp) == 4:
-    #    break
+for date in training_set_str:
+    day_count = day_count + 1
+    print 'loading day %d: %s' % (day_count,date)
+    start_of_day = datetime.strptime(date,'%Y%m%d').replace(hour=9,minute=30)
+    end_of_day = datetime.strptime(date,'%Y%m%d').replace(hour=16)
+    idx = date_range(start_of_day, end_of_day, freq='Min')
+    if dev_mode:
+        ct = 0
+    for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','allstocks_'+date,'*')):
+        name = nasdaq_100_file.rpartition('_')[2][:-4]
+        try:
+            df = extract_data.start(nasdaq_100_file, date, idx)
+            if len(df.index) == 0:  # discard empty training set
+                print 'training set is empty'
+            else:
+                if not components.get(name):
+                    components[name] = [df]
+                else:
+                    components[name].append(df)
+                if dev_mode:
+                    ct = ct + 1
+                    if ct == 7:
+                        break
+        except:
+            print sys.exc_info()
+            print 'error in %s' % nasdaq_100_file
         
+nasdaq_comp = {}
+for k, v in components.items():
+    nasdaq_comp[k] = concat(v)
+
 nasdaq_comp_close = [df.ix[1:,'% Change(close)'] for df in nasdaq_comp.values()]
-nasdaq_comp_close = concat(nasdaq_comp_close, axis=1, keys=names, join='inner')
+nasdaq_comp_close = concat(nasdaq_comp_close, axis=1, keys=components.keys(), join='inner')
+
+print '\n\n>>> Nasdaq %Change(close) per component'
+print nasdaq_comp_close.head(5)
+print nasdaq_comp_close.tail(5)
 
 # matrix to store all the variance computed by PCA
 variance_matrix = extract_data.get_pca_variance(nasdaq_comp_close, training_set[:30])
@@ -68,15 +83,25 @@ for i in range(0,len(variance_matrix)):
     top_vars.append(top_vars_day)
     
 top_vars = concat(top_vars, keys=variance_matrix.index)
-print '\n\nTop 10 variance per day'
-print top_vars.head(3)
-print top_vars.tail(3)
+print '\n\n>>> Top 10 variance per day'
+print top_vars.head(10)
+print top_vars.tail(10)
 
+print '\n\n>>> Top 10 variance of day 30'
 print top_vars.ix[training_set[30]].head(15)
 print top_vars.ix[training_set[30]].index
 
-result = select_model.get_top_dims(nasdaq_comp_close, top_vars, training_set[30], 85)
+pct = 85.0
+result = select_model.get_top_dims(nasdaq_comp_close, top_vars, training_set[30], pct)
+print '\n\n>>> Nasdaq components within %f%% cumulative variance on day 30' % pct
 print result.head()
+
+#import time
+#start_time = time.time()
+#tree = select_model.knn(result, 7)
+#print tree
+#print 'done in %fs' % (time.time() - start_time)
+
 
 """
 print '\nmahalanobis distance between 1st and 2nd row is %s' % \
