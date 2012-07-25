@@ -5,14 +5,11 @@ from datetime import datetime, date, timedelta
 from clearwing import extract_data, select_model
 from pandas import *
 import numpy as np
-import csv
-import os
-import glob
-import sys
+import os, glob, sys
 
 # for debugging/printing purposes
 set_printoptions(max_rows=30, max_columns=200, max_colwidth=10000)
-dev_mode = False
+dev_mode = True
 
 # Generate series of business days from QQQ earliest date to QQQ latest date
 qqq_start = datetime(1999,3,10)
@@ -32,11 +29,16 @@ day_count = 0
 for date in training_set_str:
     day_count = day_count + 1
     print 'loading day %d: %s' % (day_count,date)
+    
+    # Generate DateTimeIndex to be used for reindexing the per day DataFrame
     start_of_day = datetime.strptime(date,'%Y%m%d').replace(hour=9,minute=30)
     end_of_day = datetime.strptime(date,'%Y%m%d').replace(hour=16)
     idx = date_range(start_of_day, end_of_day, freq='Min')
+    
     if dev_mode:
         ct = 0
+        
+    # Collect nasdaq components of the given date
     for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','allstocks_'+date,'*')):
         name = nasdaq_100_file.rpartition('_')[2][:-4]
         try:
@@ -50,11 +52,13 @@ for date in training_set_str:
                     components[name].append(df)
                 if dev_mode:
                     ct = ct + 1
-                    if ct == 15:
+                    if ct == 7:
                         break
         except:
             print sys.exc_info()
             print 'error in %s' % nasdaq_100_file
+            
+    # Collect QQQ of the given date
     for qqq_file in glob.glob(os.path.join('data','qqq_dir','allstocks_'+date,'table_qqq.csv')):
         try:
             df = extract_data.start(qqq_file, date, idx)
@@ -66,14 +70,15 @@ for date in training_set_str:
 nasdaq_comp = {}
 for k, v in components.items():
     nasdaq_comp[k] = concat(v)
-qqq = concat(qqq_components)
+nasdaq_comp = Panel(nasdaq_comp)
+nasdaq_comp_close = nasdaq_comp.ix[:,:,'% Change(close)']
+print '\n\n>>> Nasdaq comp'
+print nasdaq_comp
 
+qqq = concat(qqq_components)
 print '\n\n>>> QQQ'
 print qqq.head()
 print qqq.tail()
-
-nasdaq_comp_close = [df.ix[1:,'% Change(close)'] for df in nasdaq_comp.values()]
-nasdaq_comp_close = concat(nasdaq_comp_close, axis=1, keys=components.keys(), join='inner')
 
 print '\n\n>>> Nasdaq %Change(close) per component'
 print nasdaq_comp_close.head(5)
