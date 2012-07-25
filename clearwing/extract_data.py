@@ -82,5 +82,4 @@ def start(filepath = 'data/qqq/table_qqq.csv', dates=[]):
         slices = slices + [data_slice]
     print 'done in %fs' % (time.time() - start_time)
     return concat(slices).fillna(value=0)
-    #return concat(slices).pct_change().fillna(value=0)
 

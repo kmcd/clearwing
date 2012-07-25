@@ -11,6 +11,9 @@ import os
 import glob
 import sys
 
+# for debugging/printing purposes
+set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
+
 # Generate series of business days from QQQ earliest date to QQQ latest date
 qqq_start = datetime(1999,3,10)
 qqq_end = datetime(2012,6,7) + timedelta(days=-60)
@@ -27,7 +30,7 @@ names = []      # list of nasdaq component names
 
 for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
     print '\n'
-    print 'loading %s' % nasdaq_100_file
+    print 'loading %d: %s' % (len(names)+1,nasdaq_100_file)
     try:
         df = extract_data.start(nasdaq_100_file, training_set_str)
         if len(df.index) == 0:  # discard empty training set
@@ -43,7 +46,7 @@ for nasdaq_100_file in glob.glob(os.path.join('data','nasdaq_100','*')):
         print sys.exc_info()
         print 'error in %s' % nasdaq_100_file
     # for dev purposes only
-    #if len(nasdaq_comp) == 3:
+    #if len(nasdaq_comp) == 4:
     #    break
         
 nasdaq_comp_close = [df.ix[1:,'% Change(close)'] for df in nasdaq_comp.values()]
@@ -56,9 +59,9 @@ top_vars = []   # matrix of top 10 dimensions with highest variance per day
 for i in range(0,len(variance_matrix)):
     row = variance_matrix.ix[i,:]
     row = row / row.sum() * 100.0
-    new_index = row.index[np.argsort(row)[-1:-11:-1]] # get top 10 highest
+    new_index = row.index[np.argsort(row)[::-1]] # descending order of variances
     row = row.reindex(index=new_index)
-    top_vars_day = concat(      # top 10 highest variance for the day
+    top_vars_day = concat(
                         [row, row.cumsum()],
                         axis=1,
                         keys=['% variance', '% cumulative'])
@@ -69,6 +72,13 @@ print '\n\nTop 10 variance per day'
 print top_vars.head(3)
 print top_vars.tail(3)
 
+print top_vars.ix[training_set[30]].head(15)
+print top_vars.ix[training_set[30]].index
+
+result = select_model.get_top_dims(nasdaq_comp_close, top_vars, training_set[30], 85)
+print result.head()
+
+"""
 print '\nmahalanobis distance between 1st and 2nd row is %s' % \
         select_model.mahalanobis_dist(
                 nasdaq_comp_close.ix[1,:],
@@ -79,3 +89,4 @@ print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=10,minute
 print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=11,minute=0))
 print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=12,minute=0))
 print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=13,minute=0))
+"""

@@ -1,6 +1,6 @@
 from datetime import timedelta
 from numpy import linalg
-from scipy import spatial
+from scipy.spatial import distance, KDTree
 
 def get_cov_inv(df):
     """
@@ -13,7 +13,7 @@ def mahalanobis_dist(u, v, df):
     returns the mahalanobis distance as computed by scipy
     """
     VI = get_cov_inv(df)
-    return spatial.distance.mahalanobis(u, v, VI)
+    return distance.mahalanobis(u, v, VI)
     
 def is_long(df, curr_datetime):
     next_datetime = curr_datetime + timedelta(minutes=1)
@@ -35,3 +35,10 @@ def is_short(df, curr_datetime):
            ( (next_high - current_close) <= 0.03 or \
              (next_close - current_close) <= 0.03 )
 
+def get_top_dims(data, top_vars, date_time, percent):
+    idx = top_vars.ix[date_time].index
+    last_idx = top_vars.ix[date_time]['% cumulative'].searchsorted(percent)
+    return data[idx[:last_idx]]
+
+def knn(data, leaf = 7):
+    return KDTree(data, leaf)
