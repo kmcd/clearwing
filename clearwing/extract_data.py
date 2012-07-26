@@ -28,10 +28,14 @@ def get_pca_variance(df, dates, loopback=30):
     """
     result = {}
     for day in dates:
-        end_day = day+BDay(loopback-1)
-        sd = mlab.PCA(df.ix[day:end_day]).sigma
-        variance = [x**2 for x in sd]
-        result[end_day] = Series(variance, index=df.columns)
+        try:
+            end_day = day+BDay(loopback-1)
+            sd = mlab.PCA(df.ix[day:end_day]).sigma
+            variance = [x**2 for x in sd]
+            result[end_day] = Series(variance, index=df.columns)
+            print '%s done' % day
+        except:
+            print 'error in PCA computation of %s' % day
     return DataFrame.from_dict(result, orient='index')
 
 def start(filepath, date, idx):

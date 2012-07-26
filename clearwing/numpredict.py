@@ -1,32 +1,5 @@
 from random import random,randint
-from select_model import mahalanobis
 import math
-
-def getdistances(data,vec1):
-    distancelist=[]
-    
-    # Loop over every item in the dataset
-    for i in range(len(data)):
-        vec2=data[i]['input']
-        
-        # Add the distance and the index
-        distancelist.append((euclidean(vec1,vec2),i))
-    
-    # Sort by distance
-    distancelist.sort()
-    return distancelist
-
-def knnestimate(data,vec1,k=5):
-    # Get sorted distances
-    dlist=getdistances(data,vec1)
-    avg=0.0
-    
-    # Take the average of the top k results
-    for i in range(k):
-        idx=dlist[i][1]
-        avg+=data[idx]['result']
-    avg=avg/k
-    return avg
 
 def inverseweight(dist,num=1.0,const=0.1):
     return num/(dist+const)

@@ -4,12 +4,13 @@ from random import sample
 from datetime import datetime, date, timedelta
 from clearwing import extract_data, select_model
 from pandas import *
+from pandas.tseries.offsets import BDay
 import numpy as np
 import os, glob, sys
 
 # for debugging/printing purposes
-set_printoptions(max_rows=30, max_columns=200, max_colwidth=10000)
-dev_mode = True
+set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
+dev_mode = False
 
 # Generate series of business days from QQQ earliest date to QQQ latest date
 qqq_start = datetime(1999,3,10)
@@ -18,7 +19,7 @@ trading_days = date_range(qqq_start, qqq_end, freq='B')
 
 # Pick a date at random
 # Generate a list of 60 business days starting from the random date chosen
-start_day = sample(trading_days, 1)[0]
+start_day = datetime(2010,11,12)#sample(trading_days, 1)[0]
 training_set = date_range(start_day, periods=60, freq='B')
 training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
@@ -52,7 +53,7 @@ for date in training_set_str:
                     components[name].append(df)
                 if dev_mode:
                     ct = ct + 1
-                    if ct == 7:
+                    if ct == 20:
                         break
         except:
             print sys.exc_info()
@@ -80,12 +81,41 @@ print '\n\n>>> QQQ'
 print qqq.head()
 print qqq.tail()
 
-print '\n\n>>> Nasdaq %Change(close) per component'
-print nasdaq_comp_close.head(5)
-print nasdaq_comp_close.tail(5)
+print '\n\n>>> Nasdaq %Change(close) for the first 10 components'
+print nasdaq_comp_close.ix[1::391,:10]
+#print nasdaq_comp_close.ix[-5:,:10]
 
+
+lpbk = 30
 # matrix to store all the variance computed by PCA
-variance_matrix = extract_data.get_pca_variance(nasdaq_comp_close, training_set[:30])
+variance_matrix = extract_data.get_pca_variance(nasdaq_comp_close, training_set[:30], loopback=lpbk)
+
+print '\n\n>>> Variance Matrix'
+print variance_matrix.ix[:5,:10]
+
+g = lambda x: x.replace(hour=9,minute=30)
+gg = [g(x+BDay(lpbk-1)) for x in training_set[:30]]
+ggg = nasdaq_comp.ix[:,:,'Volume'].reindex(gg)
+ggg.index = [(x+BDay(lpbk-1)) for x in training_set[:30]]
+ggg.reindex(variance_matrix.index)
+res = ggg * variance_matrix
+for i in range(len(res)):
+    res.ix[i,:] = res.ix[i,:]/res.ix[i,:].sum()
+print '\n\n>>> Nasdaq Liquidity (Volume * variance)'
+print res.ix[:5,:10]
+print res.ix[:5,10:20]
+print res.ix[:5,20:30]
+print res.ix[:5,30:40]
+print res.ix[:5,40:50]
+print res.ix[:5,50:60]
+print res.ix[:5,60:70]
+print res.ix[:5,70:80]
+print res.ix[:5,80:90]
+print res.ix[:5,90:100]
+print res.ix[:5,100:110]
+print res.ix[:5,110:120]
+print res.ix[:5,120:130]
+print res.ix[:5,130:140]
 
 top_vars = []   # matrix of top 10 dimensions with highest variance per day
 for i in range(0,len(variance_matrix)):
