@@ -2,7 +2,7 @@
 # Pick a day at random from data set
 from random import sample
 from datetime import datetime, date, timedelta
-from clearwing import extract_data, select_model
+from clearwing import extract_data, select_model, utils
 from pandas import *
 from pandas.tseries.offsets import BDay
 import numpy as np
@@ -88,38 +88,38 @@ print nasdaq_comp_close.ix[1::391,:10]
 
 lpbk = 30
 # matrix to store all the variance computed by PCA
-variance_matrix = extract_data.get_pca_variance(nasdaq_comp_close, training_set[:30], loopback=lpbk)
+var_mat = extract_data.get_pca_variance(nasdaq_comp_close, training_set[:30], loopback=lpbk)
 
 print '\n\n>>> Variance Matrix'
-print variance_matrix.ix[:5,:10]
+print var_mat.ix[:5,:10]
 
-g = lambda x: x.replace(hour=9,minute=30)
-gg = [g(x+BDay(lpbk-1)) for x in training_set[:30]]
-ggg = nasdaq_comp.ix[:,:,'Volume'].reindex(gg)
-ggg.index = [(x+BDay(lpbk-1)) for x in training_set[:30]]
-ggg.reindex(variance_matrix.index)
-res = ggg * variance_matrix
-for i in range(len(res)):
-    res.ix[i,:] = res.ix[i,:]/res.ix[i,:].sum()
+fix_time = lambda x: x.replace(hour=9,minute=30)
+fixed = [fix_time(x+BDay(lpbk-1)) for x in training_set[:30]]
+vol_mat = nasdaq_comp.ix[:,:,'Volume'].reindex(fixed)
+vol_mat.index = [(x+BDay(lpbk-1)) for x in training_set[:30]]
+vol_mat.reindex(var_mat.index)
+liq_mat = vol_mat * var_mat
+for i in range(len(liq_mat)):
+    liq_mat.ix[i,:] = liq_mat.ix[i,:]/liq_mat.ix[i,:].sum()
 print '\n\n>>> Nasdaq Liquidity (Volume * variance)'
-print res.ix[:5,:10]
-print res.ix[:5,10:20]
-print res.ix[:5,20:30]
-print res.ix[:5,30:40]
-print res.ix[:5,40:50]
-print res.ix[:5,50:60]
-print res.ix[:5,60:70]
-print res.ix[:5,70:80]
-print res.ix[:5,80:90]
-print res.ix[:5,90:100]
-print res.ix[:5,100:110]
-print res.ix[:5,110:120]
-print res.ix[:5,120:130]
-print res.ix[:5,130:140]
+print liq_mat.ix[:5,:10]
+print liq_mat.ix[:5,10:20]
+print liq_mat.ix[:5,20:30]
+print liq_mat.ix[:5,30:40]
+print liq_mat.ix[:5,40:50]
+print liq_mat.ix[:5,50:60]
+print liq_mat.ix[:5,60:70]
+print liq_mat.ix[:5,70:80]
+print liq_mat.ix[:5,80:90]
+print liq_mat.ix[:5,90:100]
+print liq_mat.ix[:5,100:110]
+print liq_mat.ix[:5,110:120]
+print liq_mat.ix[:5,120:130]
+print liq_mat.ix[:5,130:140]
 
 top_vars = []   # matrix of top 10 dimensions with highest variance per day
-for i in range(0,len(variance_matrix)):
-    row = variance_matrix.ix[i,:]
+for i in range(0,len(var_mat)):
+    row = var_mat.ix[i,:]
     row = row / row.sum() * 100.0
     new_index = row.index[np.argsort(row)[:-11:-1]] # descending order of variances
     row = row.reindex(index=new_index)
@@ -129,7 +129,7 @@ for i in range(0,len(variance_matrix)):
                         keys=['% variance', '% cumulative'])
     top_vars.append(top_vars_day)
     
-top_vars = concat(top_vars, keys=variance_matrix.index)
+top_vars = concat(top_vars, keys=var_mat.index)
 print '\n\n>>> Top 10 variance per day'
 print top_vars.head(10)
 print top_vars.tail(10)
@@ -142,6 +142,18 @@ pct = 85.0
 result = select_model.get_top_dims(nasdaq_comp_close, top_vars, training_set[30], pct)
 print '\n\n>>> Nasdaq components within %f%% cumulative variance on day 30' % pct
 print result.head()
+
+dir_name = 'hdf_stored_data'
+if not os.path.exists(dir_name):
+    os.makedirs(dir_name)
+store = utils.create_hdf5(dir_name+'/'+start_day.strftime('%Y%m%d'))
+utils.save_object(store, nasdaq_comp, 'nasdaq_comp')
+utils.save_object(store, var_mat, 'var_mat')
+utils.save_object(store, vol_mat, 'vol_mat')
+utils.save_object(store, liq_mat, 'liq_mat')
+print store
+
+
 #import time
 
 #start_time = time.time()
