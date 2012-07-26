@@ -19,7 +19,7 @@ trading_days = date_range(qqq_start, qqq_end, freq='B')
 
 # Pick a date at random
 # Generate a list of 60 business days starting from the random date chosen
-start_day = datetime(2010,11,12)#sample(trading_days, 1)[0]
+start_day = sample(trading_days, 1)[0]
 training_set = date_range(start_day, periods=60, freq='B')
 training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
