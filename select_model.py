@@ -1,4 +1,26 @@
+"""
+usage:
+python select_model.py <date>
+
+where:
+<date> is the start_day from prepare_data.py with format YYYYMMDD
+"""
 from clearwing import select_model, utils
+from datetime import datetime
+from pandas import *
+import sys
+
+dir_name = 'data/training'
+start_day_str = sys.argv[1]
+store = HDFStore(dir_name+'/'+start_day_str+'.h5')
+
+nasdaq_comp = store['nasdaq_comp']
+qqq = store['qqq']
+
+start_day = datetime.strptime(start_day_str, '%Y%m%d')
+training_set = date_range(start_day, periods=60, freq='B')
+training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
+
 
 # compute for liquidity (Volume * Close)
 # converted to per million units for printing
@@ -45,7 +67,6 @@ print top10_liq.tail()
 
 # kNN
 knn = select_model.KNN(top10_liq, qqq)
-print knn.estimate(top10_liq.ix[0,:], select_model.is_long)
 print knn.error_score(select_model.is_long, top10_liq, k=7)
 print knn.error_score(select_model.is_short, top10_liq, k=7)
 

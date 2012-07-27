@@ -86,4 +86,5 @@ if not os.path.exists(dir_name):
     os.makedirs(dir_name)
 store = utils.create_hdf5(dir_name+'/'+start_day.strftime('%Y%m%d'))
 utils.save_object(store, nasdaq_comp, 'nasdaq_comp')
+utils.save_object(store, qqq, 'qqq')
 print store
