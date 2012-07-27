@@ -79,7 +79,7 @@ class KNN:
     
     def error_score(self, classifier, inpt, k=7):
         ncor = 0.
-        count = 0.
+        count = 0
         for i in range(len(inpt)):
             row = inpt.ix[i,:]
             try:
@@ -88,9 +88,10 @@ class KNN:
                 if est == act:
                     ncor = ncor + 1
                 count = count + 1
-                print inpt.index[i],ncor,count
+                if count % 100 == 0:
+                    print inpt.index[i],ncor,count
             except:  # this is to handle data at 16:00
                 pass
-        pct = ncor / count
-        return pct
+        pct = 1 - (ncor / count)
+        return pct * 100.0
         
