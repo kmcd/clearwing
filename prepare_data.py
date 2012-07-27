@@ -4,7 +4,6 @@ from random import sample
 from datetime import datetime, date, timedelta
 from clearwing import extract_data, select_model, utils
 from pandas import *
-from pandas.tseries.offsets import BDay
 import numpy as np
 import os, glob, sys
 
@@ -53,7 +52,7 @@ for date in training_set_str:
                     components[name].append(df)
                 if dev_mode:
                     ct = ct + 1
-                    if ct == 20:
+                    if ct == 15:
                         break
         except:
             print sys.exc_info()
@@ -70,9 +69,9 @@ for date in training_set_str:
         
 nasdaq_comp = {}
 for k, v in components.items():
-    nasdaq_comp[k] = concat(v)
+    nasdaq_comp[k] = concat(v).fillna(method='pad').fillna(method='bfill')
 nasdaq_comp = Panel(nasdaq_comp)
-nasdaq_comp_close = nasdaq_comp.ix[:,:,'% Change(close)']
+
 print '\n\n>>> Nasdaq comp'
 print nasdaq_comp
 
@@ -81,96 +80,59 @@ print '\n\n>>> QQQ'
 print qqq.head()
 print qqq.tail()
 
-print '\n\n>>> Nasdaq %Change(close) for the first 10 components'
-print nasdaq_comp_close.ix[1::391,:10]
-#print nasdaq_comp_close.ix[-5:,:10]
+# compute for liquidity (Volume * Close)
+# converted to per million units for printing
+close_price_mat = nasdaq_comp.ix[:,:,'Close']
+vol_mat = nasdaq_comp.ix[:,:,'Volume']
+liq_mat = close_price_mat * vol_mat / 1000000
+liq_mat = liq_mat.fillna(value=0)
+print '\n\n>>> Nasdaq Liquidity in millions'
+for i in range(0,len(liq_mat.columns),10):
+    print liq_mat.ix[:5,i:i+10]
 
-
+# select liquidity at the end of the each day
 lpbk = 30
-# matrix to store all the variance computed by PCA
-var_mat = extract_data.get_pca_variance(nasdaq_comp_close, training_set[:30], loopback=lpbk)
+training_days = date_range(training_set[lpbk], training_set[-1], freq='B').shift(16, freq='H')
+liq_mat_eod = liq_mat.reindex(training_days)
 
-print '\n\n>>> Variance Matrix'
-print var_mat.ix[:5,:10]
-
-fix_time = lambda x: x.replace(hour=9,minute=30)
-fixed = [fix_time(x+BDay(lpbk-1)) for x in training_set[:30]]
-vol_mat = nasdaq_comp.ix[:,:,'Volume'].reindex(fixed)
-vol_mat.index = [(x+BDay(lpbk-1)) for x in training_set[:30]]
-vol_mat.reindex(var_mat.index)
-liq_mat = vol_mat * var_mat
-for i in range(len(liq_mat)):
-    liq_mat.ix[i,:] = liq_mat.ix[i,:]/liq_mat.ix[i,:].sum()
-print '\n\n>>> Nasdaq Liquidity (Volume * variance)'
-print liq_mat.ix[:5,:10]
-print liq_mat.ix[:5,10:20]
-print liq_mat.ix[:5,20:30]
-print liq_mat.ix[:5,30:40]
-print liq_mat.ix[:5,40:50]
-print liq_mat.ix[:5,50:60]
-print liq_mat.ix[:5,60:70]
-print liq_mat.ix[:5,70:80]
-print liq_mat.ix[:5,80:90]
-print liq_mat.ix[:5,90:100]
-print liq_mat.ix[:5,100:110]
-print liq_mat.ix[:5,110:120]
-print liq_mat.ix[:5,120:130]
-print liq_mat.ix[:5,130:140]
-
-top_vars = []   # matrix of top 10 dimensions with highest variance per day
-for i in range(0,len(var_mat)):
-    row = var_mat.ix[i,:]
-    row = row / row.sum() * 100.0
-    new_index = row.index[np.argsort(row)[:-11:-1]] # descending order of variances
-    row = row.reindex(index=new_index)
-    top_vars_day = concat(
-                        [row, row.cumsum()],
-                        axis=1,
-                        keys=['% variance', '% cumulative'])
-    top_vars.append(top_vars_day)
+# collect top nasdaq components in terms of liquidity
+top_dims = []
+with_records = []
+for i in range(0, len(liq_mat_eod)):
+    try:
+        row = liq_mat_eod.ix[i,:]
+        new_index = row.index[np.argsort(row)[:-11:-1]]
+        row = row.reindex(index=new_index)
+        top_dims_day = DataFrame({'Liquidity':row})
+        top_dims.append(top_dims_day)
+        with_records.append(liq_mat_eod.index[i])
+    except:
+        print 'no record on %s, maybe a holiday' % liq_mat_eod.index[i]
+top_dims = concat(top_dims, keys=with_records)
     
-top_vars = concat(top_vars, keys=var_mat.index)
-print '\n\n>>> Top 10 variance per day'
-print top_vars.head(10)
-print top_vars.tail(10)
+print '\n\n>>> Top 10 liquidity per day'
+print top_dims.head(10)
+print top_dims.tail(10)
 
-print '\n\n>>> Top 10 variance of day 30'
-print top_vars.ix[training_set[30]].head(15)
-print top_vars.ix[training_set[30]].index
+print '\n\n>>> Top 10 liquidity of day %d, %s' % (lpbk, training_days[0])
+print top_dims.ix[training_days[0]].head(15)
+print top_dims.ix[training_days[0]].index
 
-pct = 85.0
-result = select_model.get_top_dims(nasdaq_comp_close, top_vars, training_set[30], pct)
-print '\n\n>>> Nasdaq components within %f%% cumulative variance on day 30' % pct
-print result.head()
+top10_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0])
+print '\n\n>>> Top 10 Nasdaq components with highest liquidity on day %d' % lpbk
+print top10_liq.head()
+print top10_liq.tail()
 
+# save to hdf5 format
 dir_name = 'hdf_stored_data'
 if not os.path.exists(dir_name):
     os.makedirs(dir_name)
 store = utils.create_hdf5(dir_name+'/'+start_day.strftime('%Y%m%d'))
 utils.save_object(store, nasdaq_comp, 'nasdaq_comp')
-utils.save_object(store, var_mat, 'var_mat')
 utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
+utils.save_object(store, top10_liq, 'top10_liq')
 print store
 
+# kNN
 
-#import time
-
-#start_time = time.time()
-#tree = select_model.knn(result, 7)
-#print tree
-#print 'done in %fs' % (time.time() - start_time)
-
-
-"""
-print '\nmahalanobis distance between 1st and 2nd row is %s' % \
-        select_model.mahalanobis_dist(
-                nasdaq_comp_close.ix[1,:],
-                nasdaq_comp_close.ix[2,:],
-                nasdaq_comp_close)
-
-print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=10,minute=0))
-print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=11,minute=0))
-print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=12,minute=0))
-print select_model.is_long(nasdaq_comp['jnpr'], start_day.replace(hour=13,minute=0))
-"""

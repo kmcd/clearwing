@@ -1,6 +1,7 @@
 from datetime import timedelta
 from numpy import linalg
 from scipy.spatial import distance, KDTree
+from pandas.tseries.index import date_range
 
 def get_cov_inv(df):
     """
@@ -36,18 +37,19 @@ def is_short(df, curr_datetime):
            ( (next_high - current_close) <= 0.03 or \
              (next_close - current_close) <= 0.03 )
 
-def get_top_dims(data, top_vars, date_time, percent):
-    idx = top_vars.ix[date_time].index
-    last_idx = top_vars.ix[date_time]['% cumulative'].searchsorted(percent)
-    return data[idx[:last_idx]]
+def get_top_dims(data, top_dims, start_date, end_date, top=10):
+    idx = top_dims.ix[end_date].index
+    dates = date_range(start_date, end_date, freq='Min')
+    return data.ix[dates,idx[:top]].dropna()
 
 class KNN:
-    def __init__(self, data, leaf=7):
+    def __init__(self, data, qqq, leaf=7):
         self.data = data
+        self.qqq = qqq
         self.VI = get_cov_inv(data)
         self.leaf = leaf
         
-    def getdistances(self, data,vec1):
+    def getdistances(self, data, vec1):
         distancelist = []
         
         VI = get_cov_inv(data)
@@ -71,7 +73,18 @@ class KNN:
         # Take the average of the top k results
         for i in range(k):
             idx = dlist[i][1]
-            avg += classifier(data, data.index[idx])
+            if(classifier(self.qqq, data.index[idx])):
+                avg = avg + 1
         avg = avg / k
-        return avg
+        return avg > 0.5 # returns True only if majority is positively classified
     
+    def error_score(classifier, inpt):
+        cor = 0
+        for i in range(len(inpt)):
+            row = inpt[i,:]
+            est = self.estimate(row, classifier)
+            if est:
+                cor = cor + 1
+        pct = cor / len(inpt)
+        return pct
+        
