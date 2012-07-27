@@ -52,7 +52,7 @@ for date in training_set_str:
                     components[name].append(df)
                 if dev_mode:
                     ct = ct + 1
-                    if ct == 15:
+                    if ct == 20:
                         break
         except:
             print sys.exc_info()
@@ -123,6 +123,12 @@ print '\n\n>>> Top 10 Nasdaq components with highest liquidity on day %d' % lpbk
 print top10_liq.head()
 print top10_liq.tail()
 
+# kNN
+knn = select_model.KNN(top10_liq, qqq)
+#print knn.estimate(top10_liq.ix[0,:], select_model.is_long)
+print knn.error_score(select_model.is_long, top10_liq, k=7)
+print knn.error_score(select_model.is_short, top10_liq, k=7)
+
 # save to hdf5 format
 dir_name = 'hdf_stored_data'
 if not os.path.exists(dir_name):
@@ -133,6 +139,4 @@ utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
 utils.save_object(store, top10_liq, 'top10_liq')
 print store
-
-# kNN
 

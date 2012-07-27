@@ -9,7 +9,7 @@ def get_cov_inv(df):
     """
     return linalg.inv(df.cov())
     
-def mahalanobis_dist(u, v, df, VI):
+def mahalanobis_dist(u, v, df=None, VI=None):
     """
     returns the mahalanobis distance as computed by scipy
     """
@@ -43,11 +43,10 @@ def get_top_dims(data, top_dims, start_date, end_date, top=10):
     return data.ix[dates,idx[:top]].dropna()
 
 class KNN:
-    def __init__(self, data, qqq, leaf=7):
+    def __init__(self, data, qqq):
         self.data = data
         self.qqq = qqq
         self.VI = get_cov_inv(data)
-        self.leaf = leaf
         
     def getdistances(self, data, vec1):
         distancelist = []
@@ -73,18 +72,25 @@ class KNN:
         # Take the average of the top k results
         for i in range(k):
             idx = dlist[i][1]
-            if(classifier(self.qqq, data.index[idx])):
+            if(classifier(self.qqq, self.data.index[idx])):
                 avg = avg + 1
         avg = avg / k
         return avg > 0.5 # returns True only if majority is positively classified
     
-    def error_score(classifier, inpt):
-        cor = 0
+    def error_score(self, classifier, inpt, k=7):
+        ncor = 0.
+        count = 0.
         for i in range(len(inpt)):
-            row = inpt[i,:]
-            est = self.estimate(row, classifier)
-            if est:
-                cor = cor + 1
-        pct = cor / len(inpt)
+            row = inpt.ix[i,:]
+            try:
+                est = self.estimate(row, classifier, k)
+                act = classifier(self.qqq, inpt.index[i])
+                if est == act:
+                    ncor = ncor + 1
+                count = count + 1
+                print inpt.index[i],ncor,count
+            except:  # this is to handle data at 16:00
+                pass
+        pct = ncor / count
         return pct
         
