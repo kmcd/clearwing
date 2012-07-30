@@ -91,7 +91,7 @@ for lpbk in range(1,4):
             print '\n\n>>> Start error_score (lpbk = %d, ntop = %d, k = %d)' % (lpbk, ntop, k)
             error = knn.error_score(topn_liq, k=k)
             print 'error rate = %f%%' % error
-            pct_error_set[(lpbk, top, k)] = error
+            pct_error_set[(lpbk, ntop, k)] = error
         
         utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
 
