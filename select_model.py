@@ -46,47 +46,53 @@ print '\n\n>>> Nasdaq Liquidity in millions'
 for i in range(0,len(liq_mat.columns),10):
     print liq_mat.ix[:5,i:i+10]
 
-# select liquidity at the end of the each day
-lpbk = 1
-training_days = date_range(training_set[lpbk], training_set[-1], freq='B').shift(16, freq='H')
-liq_mat_eod = liq_mat.reindex(training_days)
-
-# collect top nasdaq components in terms of liquidity
-ntop = 2
-top_dims = []
-with_records = []
-for i in range(0, len(liq_mat_eod)):
-    try:
-        row = liq_mat_eod.ix[i,:]
-        new_index = row.index[np.argsort(row)[:-(ntop+1):-1]]
-        row = row.reindex(index=new_index)
-        top_dims_day = DataFrame({'Liquidity':row})
-        top_dims.append(top_dims_day)
-        with_records.append(liq_mat_eod.index[i])
-    except:
-        print 'no record on %s, maybe a holiday' % liq_mat_eod.index[i]
-        
-top_dims = concat(top_dims, keys=with_records)
-    
-print '\n\n>>> Top %d liquidity per day' % ntop
-print top_dims.head(10)
-print top_dims.tail(10)
-
-print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lpbk, training_days[0])
-print top_dims.ix[training_days[0]].head(15)
-print top_dims.ix[training_days[0]].index
-
-topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
-print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lpbk)
-print topn_liq.head()
-print topn_liq.tail()
-
-# kNN
-knn = select_model.KNN(topn_liq, qqq)
-print '\n\n>>> Start error_score'
-print 'error rate = %f%%' % knn.error_score(topn_liq, k=7)
-
 utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
-utils.save_object(store, topn_liq, 'topn_liq')
+
+pct_error_set = {}
+for lpbk in range(1,4):
+    # select liquidity at the end of the each day
+    training_days = date_range(training_set[lpbk], training_set[-1], freq='B').shift(16, freq='H')
+    liq_mat_eod = liq_mat.reindex(training_days)
+
+    for ntop in range(2,11):        
+        # collect top nasdaq components in terms of liquidity
+        top_dims = []
+        with_records = []
+        for i in range(0, len(liq_mat_eod)):
+            try:
+                row = liq_mat_eod.ix[i,:]
+                new_index = row.index[np.argsort(row)[:-(ntop+1):-1]]
+                row = row.reindex(index=new_index)
+                top_dims_day = DataFrame({'Liquidity':row})
+                top_dims.append(top_dims_day)
+                with_records.append(liq_mat_eod.index[i])
+            except:
+                print 'no record on %s, maybe a holiday' % liq_mat_eod.index[i]
+                
+        top_dims = concat(top_dims, keys=with_records)
+            
+        print '\n\n>>> Top %d liquidity per day' % ntop
+        print top_dims.head(10)
+        print top_dims.tail(10)
+
+        print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lpbk, training_days[0])
+        print top_dims.ix[training_days[0]].head(15)
+        print top_dims.ix[training_days[0]].index
+
+        topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
+        print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lpbk)
+        print topn_liq.head()
+        print topn_liq.tail()
+
+        for k in range(1,8):
+            # kNN
+            knn = select_model.KNN(topn_liq, qqq)
+            print '\n\n>>> Start error_score (lpbk = %d, ntop = %d, k = %d)' % (lpbk, ntop, k)
+            error = knn.error_score(topn_liq, k=k)
+            print 'error rate = %f%%' % error
+            pct_error_set[(lpbk, top, k)] = error
+        
+        utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
+
 
