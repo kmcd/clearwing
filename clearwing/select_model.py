@@ -2,6 +2,7 @@ from datetime import timedelta
 from numpy import linalg
 from scipy.spatial import distance, KDTree
 from pandas.tseries.index import date_range
+import time, sys
 
 def get_cov_inv(df):
     """
@@ -63,35 +64,44 @@ class KNN:
         # Sort by distance
         distancelist.sort()
         return distancelist
+        
+    def qqq_classify(self, idx):
+        if self.qqq.ix[idx, 'is_long']:
+            return 1
+        elif self.qqq.ix[idx, 'is_short']:
+            return -1
+        else:
+            return 0
     
-    def estimate(self, vec, classifier, k=7):
+    def estimate(self, vec, k=7):
         # Get sorted distances
         dlist = self.getdistances(self.data,vec)
         avg = 0.0
         
         # Take the average of the top k results
         for i in range(k):
-            idx = dlist[i][1]
-            if(classifier(self.qqq, self.data.index[idx])):
-                avg = avg + 1
-        avg = avg / k
-        return avg > 0.5 # returns True only if majority is positively classified
+            idx = self.data.index[dlist[i][1]]
+            avg = avg + self.qqq_classify(idx)
+        if avg == 0:
+            return 0
+        return avg / abs(avg)
     
-    def error_score(self, classifier, inpt, k=7):
+    def error_score(self, inpt, k=7):
         ncor = 0.
         count = 0
+        st = time.time()
         for i in range(len(inpt)):
+            if inpt.index[i].hour == 16:
+                continue
             row = inpt.ix[i,:]
-            try:
-                est = self.estimate(row, classifier, k)
-                act = classifier(self.qqq, inpt.index[i])
-                if est == act:
-                    ncor = ncor + 1
-                count = count + 1
-                if count % 100 == 0:
-                    print inpt.index[i],ncor,count
-            except:  # this is to handle data at 16:00
-                pass
+            
+            est = self.estimate(row, k)
+            act = self.qqq_classify(inpt.index[i])
+            if est == act:
+                ncor = ncor + 1
+            count = count + 1
+            if count % 100 == 0:
+                print inpt.index[i],ncor,count,time.time()-st
         pct = 1 - (ncor / count)
         return pct * 100.0
         
