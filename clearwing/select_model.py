@@ -79,7 +79,6 @@ class KNN:
         avg = 0.0
         
         # Take the average of the top k results
-        k = min(k, len(dlist))
         for i in range(k):
             idx = self.data.index[dlist[i][1]]
             avg = avg + self.qqq_classify(idx)
@@ -101,7 +100,7 @@ class KNN:
             if est == act:
                 ncor = ncor + 1
             count = count + 1
-            #if count % 100 == 0:
+            #if count % 10 == 0:
             #    print '%s   %d/%d    %.2f s' % (inpt.index[i],ncor,count,time.time()-st)
         pct = 1 - (ncor / count)
         return pct * 100.0

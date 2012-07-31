@@ -9,7 +9,7 @@ from random import sample
 from clearwing import select_model, utils
 from datetime import datetime
 from pandas import *
-import sys
+import sys, time
 
 dir_name = 'data/training'
 start_day_str = sys.argv[1]
@@ -72,6 +72,7 @@ for ntop in range(10,1,-1):
             
     top_dims = concat(top_dims, keys=with_records)
         
+    """
     print '\n\n>>> Top %d liquidity per day' % ntop
     print top_dims.head(10)
     print top_dims.tail(10)
@@ -79,32 +80,19 @@ for ntop in range(10,1,-1):
     print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lpbk, training_days[0])
     print top_dims.ix[training_days[0]].head(15)
     print top_dims.ix[training_days[0]].index
-
+    """
     topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
     print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lpbk)
     print topn_liq.head()
     print topn_liq.tail()
     
+    # kNN
+    knn = select_model.KNN(topn_liq, qqq)
+
     for k in range(7,0,-1):
-        for m in [1,5,10,15,20,40,60,80,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400]:
-            
-            print '\n>>> Start error_score (lpbk = %d, ntop = %d, k = %d)' % (lpbk, ntop, k)
-            trials = 15
-            error_train = 0
-            error_test = 0
-            
-            for i in range(trials):
-                train_idx =  sample(topn_liq.index, m)
-                test_idx = []
-                for x in topn_liq.index:
-                    if not x in train_idx:
-                        test_idx.append(x)
-                # kNN
-                knn = select_model.KNN(topn_liq.ix[train_idx], qqq)
-                error_train = error_train + knn.error_score(topn_liq.ix[train_idx], k=k)
-                error_test = error_test + knn.error_score(topn_liq.ix[test_idx], k=k)
-            print 'error rate (m = %d, trials = %d, train) = %f%%' % (m, trials, error_train / trials)
-            print 'error rate (m = %d, trials = %d, test)  = %f%%' % (m, trials, error_test / trials)
+        st = time.time()
+        error = knn.error_score(topn_liq, k=k)
+        print '(lpbk = %d, ntop = %d, k = %d) error rate = %f%%  [time = %fs]' % (lpbk, ntop, k, error, time.time()-st)
             
     utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
 
