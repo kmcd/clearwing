@@ -37,7 +37,7 @@ def get_pca_variance(df, dates, loopback=30):
         except:
             print 'error in PCA computation of %s' % day
     return DataFrame.from_dict(result, orient='index')
-
+    
 def start(filepath, date, idx):
     """
 
@@ -50,6 +50,8 @@ def start(filepath, date, idx):
                 date_parser=date_time_merger,
            )
     data = data.ix[:,['Date_Time','Open','High','Low','Close','Volume']]
+    for col in ['Open','High','Low','Close']:
+        data[col] = data[col].apply(lambda x : round(x,2))
     data = data.set_index('Date_Time').reindex(idx, method='pad').dropna()
     data['% Change(close)'] = data['Close'].pct_change().fillna(value=0)
     return data
