@@ -62,6 +62,7 @@ class KNN:
             distancelist.append((mahalanobis_dist(vec1,vec2,VI=VI),i))
         
         # Sort by distance
+        # Should this not be reversed - ie largest to lowest?
         distancelist.sort()
         return distancelist
         
