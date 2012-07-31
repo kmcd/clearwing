@@ -5,6 +5,7 @@ python select_model.py <date>
 where:
 <date> is the start_day from prepare_data.py with format YYYYMMDD
 """
+from random import sample
 from clearwing import select_model, utils
 from datetime import datetime
 from pandas import *
@@ -49,13 +50,12 @@ for i in range(0,len(liq_mat.columns),10):
 utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
 
-pct_error_set = {}
 lpbk = 3
 # select liquidity at the end of the each day
 training_days = date_range(training_set[lpbk], training_set[-1], freq='B').shift(16, freq='H')
 liq_mat_eod = liq_mat.reindex(training_days)
 
-for ntop in range(2,11):        
+for ntop in range(10,1,-1):
     # collect top nasdaq components in terms of liquidity
     top_dims = []
     with_records = []
@@ -84,15 +84,28 @@ for ntop in range(2,11):
     print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lpbk)
     print topn_liq.head()
     print topn_liq.tail()
-
-    for k in range(1,8):
-        # kNN
-        knn = select_model.KNN(topn_liq, qqq)
-        print '\n\n>>> Start error_score (lpbk = %d, ntop = %d, k = %d)' % (lpbk, ntop, k)
-        error = knn.error_score(topn_liq, k=k)
-        print 'error rate = %f%%' % error
-        pct_error_set[(lpbk, ntop, k)] = error
     
+    for k in range(7,0,-1):
+        for m in [1,5,10,15,20,40,60,80,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400]:
+            
+            print '\n>>> Start error_score (lpbk = %d, ntop = %d, k = %d)' % (lpbk, ntop, k)
+            trials = 15
+            error_train = 0
+            error_test = 0
+            
+            for i in range(trials):
+                train_idx =  sample(topn_liq.index, m)
+                test_idx = []
+                for x in topn_liq.index:
+                    if not x in train_idx:
+                        test_idx.append(x)
+                # kNN
+                knn = select_model.KNN(topn_liq.ix[train_idx], qqq)
+                error_train = error_train + knn.error_score(topn_liq.ix[train_idx], k=k)
+                error_test = error_test + knn.error_score(topn_liq.ix[test_idx], k=k)
+            print 'error rate (m = %d, trials = %d, train) = %f%%' % (m, trials, error_train / trials)
+            print 'error rate (m = %d, trials = %d, test)  = %f%%' % (m, trials, error_test / trials)
+            
     utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
 
 
