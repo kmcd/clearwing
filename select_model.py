@@ -82,10 +82,11 @@ for ntop in range(10,1,-1):
     print top_dims.ix[training_days[0]].index
     """
     topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
+    """
     print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lpbk)
     print topn_liq.head()
     print topn_liq.tail()
-    
+    """
     # kNN
     knn = select_model.KNN(topn_liq, qqq)
 

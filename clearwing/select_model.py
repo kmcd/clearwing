@@ -2,6 +2,7 @@ from datetime import timedelta
 from numpy import linalg
 from scipy.spatial import distance, KDTree
 from pandas.tseries.index import date_range
+import numpredict
 import time, sys
 
 def get_cov_inv(df):
@@ -81,7 +82,14 @@ class KNN:
         # Take the average of the top k results
         for i in range(k):
             idx = self.data.index[dlist[i][1]]
-            avg = avg + self.qqq_classify(idx)
+            # majority vote
+            #avg = avg + self.qqq_classify(idx)
+            
+            # weighted by mahalanobis distance
+            #avg = avg + self.qqq_classify(idx) * numpredict.inverseweight(dlist[i][0])
+            
+            # weighted by gaussian
+            avg = avg + self.qqq_classify(idx) * numpredict.gaussian(dlist[i][0])
         if avg == 0:
             return 0
         return avg / abs(avg)
