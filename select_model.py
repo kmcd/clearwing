@@ -51,52 +51,51 @@ utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
 
 ntop = 10
-for lkbk in [3,5,10,7]:
+for lkbk in [3,5]:
     # select liquidity at the end of the each day
     training_days = date_range(training_set[lkbk], training_set[-1], freq='B').shift(16, freq='H')
     liq_mat_eod = liq_mat.reindex(training_days)
 
-    # collect top nasdaq components in terms of liquidity
-    top_dims = []
-    with_records = []
-    for i in range(0, len(liq_mat_eod)):
-        try:
-            row = liq_mat_eod.ix[i,:]
-            new_index = row.index[np.argsort(row)[:-(ntop+1):-1]]
-            row = row.reindex(index=new_index)
-            top_dims_day = DataFrame({'Liquidity':row})
-            top_dims.append(top_dims_day)
-            with_records.append(liq_mat_eod.index[i])
-        except:
-            print 'no record on %s, maybe a holiday' % liq_mat_eod.index[i]
+    for ntop in [5,10]:
+        # collect top nasdaq components in terms of liquidity
+        top_dims = []
+        with_records = []
+        for i in range(0, len(liq_mat_eod)):
+            try:
+                row = liq_mat_eod.ix[i,:]
+                new_index = row.index[np.argsort(row)[:-(ntop+1):-1]]
+                row = row.reindex(index=new_index)
+                top_dims_day = DataFrame({'Liquidity':row})
+                top_dims.append(top_dims_day)
+                with_records.append(liq_mat_eod.index[i])
+            except:
+                print 'no record on %s, maybe a holiday' % liq_mat_eod.index[i]
+                
+        top_dims = concat(top_dims, keys=with_records)
+        topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
             
-    top_dims = concat(top_dims, keys=with_records)
-    topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
+        """
+        print '\n\n>>> Top %d liquidity per day' % ntop
+        print top_dims.head(10)
+        print top_dims.tail(10)
+
+        print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lkbk, training_days[0])
+        print top_dims.ix[training_days[0]].head(15)
+        print top_dims.ix[training_days[0]].index
+
+        print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lkbk)
+        print topn_liq.head()
+        print topn_liq.tail()
+        """
         
-    """
-    print '\n\n>>> Top %d liquidity per day' % ntop
-    print top_dims.head(10)
-    print top_dims.tail(10)
-
-    print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lkbk, training_days[0])
-    print top_dims.ix[training_days[0]].head(15)
-    print top_dims.ix[training_days[0]].index
-
-    print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lkbk)
-    print topn_liq.head()
-    print topn_liq.tail()
-    """
-    # kNN
-    knn = select_model.KNN(topn_liq, qqq)
-    
-    for k in [3,2,4,5]:
-        st = time.time()
-        print 'start cross_validation (lkbk = %d, ntop = %d, k = %d)' % (lkbk, ntop, k)
-        error = knn.cross_validate(k_fold=10, k_nearest=k)
-        print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%% [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
-    #    error = knn.error_score(topn_liq, k=k)
-    #    print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%%  [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
-            
-    utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
+        # kNN
+        knn = select_model.KNN(topn_liq, qqq)
+        for k in [2,3,4,5,6,7,1]:
+            st = time.time()
+            print 'start cross_validation (lkbk = %d, ntop = %d, k = %d)' % (lkbk, ntop, k)
+            error = knn.cross_validate(k_fold=10, k_nearest=k)
+            print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%% [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
+                
+        utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
 
 

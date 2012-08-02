@@ -99,14 +99,15 @@ class KNN:
         # Take the average of the top k results
         for i in range(k):
             idx = self.data.index[dlist[i][1]]
-            # majority vote
-            #avg = avg + self.qqq_classify(idx)
-            
-            # weighted by mahalanobis distance
-            avg = avg + self.qqq_classify(idx) * numpredict.inverseweight(dlist[i][0])
-            
-            # weighted by gaussian
-            #avg = avg + self.qqq_classify(idx) * numpredict.gaussian(dlist[i][0])
+            if idx in self.qqq.index:
+                # majority vote
+                #avg = avg + self.qqq_classify(idx)
+                
+                # weighted by mahalanobis distance
+                avg += self.qqq_classify(idx) * numpredict.inverseweight(dlist[i][0])
+                
+                # weighted by gaussian
+                #avg = avg + self.qqq_classify(idx) * numpredict.gaussian(dlist[i][0])
         if avg == 0:
             return 0
         return avg / abs(avg)
@@ -118,15 +119,16 @@ class KNN:
         for i in range(len(inpt)):
             if inpt.index[i].hour == 16:
                 continue
-            row = inpt.ix[i,:]
-            
-            est = self.estimate(row, k)
-            act = self.qqq_classify(inpt.index[i])
-            if est == act:
-                ncor = ncor + 1
-            count = count + 1
-            #if count % 100 == 0:
-            #    print '%s   %d/%d  (%.2f)  %.2f s' % (inpt.index[i],ncor,count,ncor/count,time.time()-st)
+            if inpt.index[i] in self.qqq.index:
+                row = inpt.ix[i,:]
+                
+                est = self.estimate(row, k)
+                act = self.qqq_classify(inpt.index[i])
+                if est == act:
+                    ncor = ncor + 1
+                count = count + 1
+                #if count % 100 == 0:
+                #    print '%s   %d/%d  (%.2f)  %.2f s' % (inpt.index[i],ncor,count,ncor/count,time.time()-st)
         pct = 1 - (ncor / count)
         return pct * 100.0
         
