@@ -87,10 +87,10 @@ class KNN:
             #avg = avg + self.qqq_classify(idx)
             
             # weighted by mahalanobis distance
-            #avg = avg + self.qqq_classify(idx) * numpredict.inverseweight(dlist[i][0])
+            avg = avg + self.qqq_classify(idx) * numpredict.inverseweight(dlist[i][0])
             
             # weighted by gaussian
-            avg = avg + self.qqq_classify(idx) * numpredict.gaussian(dlist[i][0])
+            #avg = avg + self.qqq_classify(idx) * numpredict.gaussian(dlist[i][0])
         if avg == 0:
             return 0
         return avg / abs(avg)
@@ -109,8 +109,8 @@ class KNN:
             if est == act:
                 ncor = ncor + 1
             count = count + 1
-            #if count % 10 == 0:
-            #    print '%s   %d/%d    %.2f s' % (inpt.index[i],ncor,count,time.time()-st)
+            #if count % 100 == 0:
+            #    print '%s   %d/%d  (%.2f)  %.2f s' % (inpt.index[i],ncor,count,ncor/count,time.time()-st)
         pct = 1 - (ncor / count)
         return pct * 100.0
         

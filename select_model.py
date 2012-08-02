@@ -50,12 +50,12 @@ for i in range(0,len(liq_mat.columns),10):
 utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
 
-lpbk = 3
-# select liquidity at the end of the each day
-training_days = date_range(training_set[lpbk], training_set[-1], freq='B').shift(16, freq='H')
-liq_mat_eod = liq_mat.reindex(training_days)
+ntop = 10
+for lkbk in [3,5,10,7]:
+    # select liquidity at the end of the each day
+    training_days = date_range(training_set[lkbk], training_set[-1], freq='B').shift(16, freq='H')
+    liq_mat_eod = liq_mat.reindex(training_days)
 
-for ntop in range(10,1,-1):
     # collect top nasdaq components in terms of liquidity
     top_dims = []
     with_records = []
@@ -77,23 +77,23 @@ for ntop in range(10,1,-1):
     print top_dims.head(10)
     print top_dims.tail(10)
 
-    print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lpbk, training_days[0])
+    print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lkbk, training_days[0])
     print top_dims.ix[training_days[0]].head(15)
     print top_dims.ix[training_days[0]].index
     """
     topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
     """
-    print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lpbk)
+    print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lkbk)
     print topn_liq.head()
     print topn_liq.tail()
     """
     # kNN
     knn = select_model.KNN(topn_liq, qqq)
 
-    for k in range(7,0,-1):
+    for k in [2,3,4,5]:
         st = time.time()
         error = knn.error_score(topn_liq, k=k)
-        print '(lpbk = %d, ntop = %d, k = %d) error rate = %f%%  [time = %fs]' % (lpbk, ntop, k, error, time.time()-st)
+        print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%%  [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
             
     utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
 
