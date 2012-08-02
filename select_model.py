@@ -71,6 +71,7 @@ for lkbk in [3,5,10,7]:
             print 'no record on %s, maybe a holiday' % liq_mat_eod.index[i]
             
     top_dims = concat(top_dims, keys=with_records)
+    topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
         
     """
     print '\n\n>>> Top %d liquidity per day' % ntop
@@ -80,20 +81,21 @@ for lkbk in [3,5,10,7]:
     print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lkbk, training_days[0])
     print top_dims.ix[training_days[0]].head(15)
     print top_dims.ix[training_days[0]].index
-    """
-    topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
-    """
+
     print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lkbk)
     print topn_liq.head()
     print topn_liq.tail()
     """
     # kNN
     knn = select_model.KNN(topn_liq, qqq)
-
-    for k in [2,3,4,5]:
+    
+    for k in [3,2,4,5]:
         st = time.time()
-        error = knn.error_score(topn_liq, k=k)
-        print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%%  [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
+        print 'start cross_validation (lkbk = %d, ntop = %d, k = %d)' % (lkbk, ntop, k)
+        error = knn.cross_validate(k_fold=10, k_nearest=k)
+        print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%% [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
+    #    error = knn.error_score(topn_liq, k=k)
+    #    print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%%  [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
             
     utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
 
