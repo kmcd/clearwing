@@ -10,9 +10,9 @@ from datetime import datetime
 from pandas import *
 import sys, time
 
-lkbk = int(sys.argv[2] or 5)
-ntop = int(sys.argv[3] or 10)
-k = int(sys.argv[4] or 7)
+lkbk = 5 if not len(sys.argv) > 2 else sys.argv[2]
+ntop = 10 if not len(sys.argv) > 3 else sys.argv[3]
+k = 7 if not len(sys.argv) > 4 else sys.argv[4]
 
 dir_name = 'data/training'
 start_day_str = sys.argv[1]
@@ -91,7 +91,7 @@ print topn_liq.tail()
 # kNN
 knn = select_model.KNN(topn_liq, qqq)
 st = time.time()
-print 'start cross_validation (lkbk = %d, ntop = %d, k = %d)' % (lkbk, ntop, k)
+print 'start error_score (lkbk = %d, ntop = %d, k = %d)' % (lkbk, ntop, k)
 error = knn.error_score(topn_liq, k)
 print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%% [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
         
