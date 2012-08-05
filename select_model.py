@@ -50,52 +50,67 @@ for i in range(0,len(liq_mat.columns),10):
 utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
 
+lkbk = 3
 ntop = 10
-for lkbk in [3,5]:
-    # select liquidity at the end of the each day
-    training_days = date_range(training_set[lkbk], training_set[-1], freq='B').shift(16, freq='H')
-    liq_mat_eod = liq_mat.reindex(training_days)
 
-    for ntop in [5,10]:
-        # collect top nasdaq components in terms of liquidity
-        top_dims = []
-        with_records = []
-        for i in range(0, len(liq_mat_eod)):
-            try:
-                row = liq_mat_eod.ix[i,:]
-                new_index = row.index[np.argsort(row)[:-(ntop+1):-1]]
-                row = row.reindex(index=new_index)
-                top_dims_day = DataFrame({'Liquidity':row})
-                top_dims.append(top_dims_day)
-                with_records.append(liq_mat_eod.index[i])
-            except:
-                print 'no record on %s, maybe a holiday' % liq_mat_eod.index[i]
-                
-        top_dims = concat(top_dims, keys=with_records)
-        topn_liq = select_model.get_top_dims(liq_mat, top_dims, training_set[0], training_days[0], top=ntop)
-            
-        """
-        print '\n\n>>> Top %d liquidity per day' % ntop
-        print top_dims.head(10)
-        print top_dims.tail(10)
+def set_start_time(date):
+    return date.shift(9, freq='H').shift(30, freq='Min')
+    
+# select liquidity at the end of the each day
+training_days = set_start_time(date_range(training_set[lkbk], training_set[-1], freq='B'))
+liq_at_start = liq_mat.reindex(set_start_time(training_set))
 
-        print '\n\n>>> Top %d liquidity of day %d, %s' % (ntop, lkbk, training_days[0])
-        print top_dims.ix[training_days[0]].head(15)
-        print top_dims.ix[training_days[0]].index
+print '\n\nliq_at_start'
+print liq_at_start.ix[:5,:5]
 
-        print '\n\n>>> Top %d Nasdaq components with highest liquidity on day %d' % (ntop, lkbk)
-        print topn_liq.head()
-        print topn_liq.tail()
-        """
+_all = {}
+for end_day in training_days:
+    print 'processing %s' % end_day
+    try:
+        start_day = end_day - (lkbk-1) * datetools.BDay()
+        lkbk_days = date_range(start_day, end_day, freq='B')
+             
+        row = liq_at_start.ix[start_day,:]
+        row = row[np.argsort(row)[::-1]]
+        topn_nasdaq = row.index[:ntop]
         
-        # kNN
-        knn = select_model.KNN(topn_liq, qqq)
-        for k in [2,3,4,5,6,7,1]:
-            st = time.time()
-            print 'start cross_validation (lkbk = %d, ntop = %d, k = %d)' % (lkbk, ntop, k)
-            error = knn.cross_validate(k_fold=10, k_nearest=k)
-            print '(lkbk = %d, ntop = %d, k = %d) error rate = %f%% [time = %fs]' % (lkbk, ntop, k, error, time.time()-st)
-                
-        utils.save_object(store, topn_liq, 'top%d_liq' % ntop)
+        pct_close = DataFrame()
+        for lkbk_day in lkbk_days:
+            mins = date_range(lkbk_day, lkbk_day.replace(hour=16, minute=0), freq='Min')
+            pct_close = concat([pct_close, nasdaq_comp.ix[topn_nasdaq, mins, '% Change(close)']])
+        
+        pct_liq_min = DataFrame()
+        for lkbk_day in lkbk_days:
+            mins = date_range(lkbk_day, lkbk_day.replace(hour=16, minute=0), freq='Min')
+            pct_liq_min = concat([pct_liq_min, liq_mat.ix[mins,topn_nasdaq]])
+            pct_liq_min = pct_liq_min.apply(lambda x : x / x.sum() * 100.0, axis=1)
+            
+        pct_liq_day = (row / row.sum() * 100.0)
+        pct_liq_day = pct_liq_day.ix[topn_nasdaq]
+        pct_liq_day = DataFrame({start_day:pct_liq_day})
+        pct_liq_day = pct_liq_day.T.reindex(index=pct_close.index, method='pad')
+        
+        _all[end_day] = Panel({'% Change(close)':pct_close,
+                               '% Liquidity 1min':pct_liq_min,
+                               '% Liquidity 3day':pct_liq_day,})
+    except:
+        print sys.exc_info()
+        #print "no record found, maybe a holiday"
+print _all[training_days[0]].ix[['% Change(close)','% Liquidity 1min','% Liquidity 3day'],training_days[0],:].head()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
