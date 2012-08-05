@@ -85,18 +85,30 @@ for end_day in training_days:
             pct_liq_min = concat([pct_liq_min, liq_mat.ix[mins,topn_nasdaq]])
             pct_liq_min = pct_liq_min.apply(lambda x : x / x.sum() * 100.0, axis=1)
             
-        pct_liq_day = (row / row.sum() * 100.0)
-        pct_liq_day = pct_liq_day.ix[topn_nasdaq]
-        pct_liq_day = DataFrame({start_day:pct_liq_day})
-        pct_liq_day = pct_liq_day.T.reindex(index=pct_close.index, method='pad')
+        pct_liq_day = {}
+        for lkbk_day in lkbk_days:
+            liq_all = liq_at_start.ix[lkbk_day, :]
+            liq_all = (liq_all / liq_all.sum() * 100.0)
+            liq_all = liq_all.ix[topn_nasdaq]
+            pct_liq_day[lkbk_day] = liq_all
+            
+        pct_liq_day = DataFrame(pct_liq_day).T
+        pct_liq_day = pct_liq_day.reindex(index=pct_close.index, method='pad')
         
         _all[end_day] = Panel({'% Change(close)':pct_close,
                                '% Liquidity 1min':pct_liq_min,
                                '% Liquidity 3day':pct_liq_day,})
     except:
-        print sys.exc_info()
-        #print "no record found, maybe a holiday"
-print _all[training_days[0]].ix[['% Change(close)','% Liquidity 1min','% Liquidity 3day'],training_days[0],:].head()
+        #print sys.exc_info()
+        print "no record found, maybe a holiday"
+
+to_use = _all[training_days[0]]
+to_use = to_use.transpose(2,0,1)
+print to_use
+
+print to_use.ix[:,'% Change(close)',:].head()
+print to_use.ix[:,'% Liquidity 1min',:].head()
+print to_use.ix[:,'% Liquidity 3day',:].head()
 
 
 
