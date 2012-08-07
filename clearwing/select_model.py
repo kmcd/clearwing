@@ -20,6 +20,9 @@ def mahalanobis_dist(u, v, df=None, VI=None):
         VI = get_cov_inv(df)
     return distance.mahalanobis(u, v, VI)
     
+def euclidean(u,v):
+    return distance.euclidean(u, v)
+    
 def is_long(df, curr_datetime):
     next_datetime = curr_datetime + timedelta(minutes=1)
     current_close = df.ix[curr_datetime, 'Close']
@@ -77,6 +80,7 @@ class KNN:
             
             # Add the distance and the index
             distancelist.append((mahalanobis_dist(vec1,vec2,VI=VI),i))
+            #distancelist.append((euclidean(vec1, vec2),i))
         
         # Sort by distance
         # Should this not be reversed - ie largest to lowest?
@@ -127,8 +131,8 @@ class KNN:
                 if est == act:
                     ncor = ncor + 1
                 count = count + 1
-                if count % 10 == 0:
-                    print '%s   %d/%d  (%.2f)  %.2f s' % (inpt.index[i],ncor,count,ncor/count,time.time()-st)
+                #if count % 10 == 0:
+                #    print '%s   %d/%d  (%.2f)  %.2f s' % (inpt.index[i],ncor,count,ncor/count,time.time()-st)
         pct = 1 - (ncor / count)
         return pct * 100.0
         

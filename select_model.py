@@ -50,70 +50,72 @@ for i in range(0,len(liq_mat.columns),10):
 utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
 
-lkbk = 3
-ntop = 10
-
-def set_start_time(date):
-    return date.shift(9, freq='H').shift(30, freq='Min')
+def set_start_time(dates):
+    """
+    set all date's time to 9:30
+    """
+    return dates.shift(9, freq='H').shift(30, freq='Min')
     
 def day_time_range(date):
+    """
+    generate range of time from 9:30 to 16:00 for the given date
+    """
     return date_range(date.replace(hour=9,minute=30),
                       date.replace(hour=16,minute=0),
                       freq='Min')
+
+lkbk = 3
+ntop = 20
     
-# select liquidity at the start of the each day
-liq_at_start = liq_mat.reindex(set_start_time(training_set))
-
 training_days = set_start_time(training_set[lkbk:])
-
-print '\n\nliq_at_start'
-print liq_at_start.ix[:5,:5]
 
 today_data_all = {}
 lkbk_days_data_all = {}
+multiplier = {}
+
 for today in training_days:
     print 'processing %s' % today
     try:
         end_day = today - datetools.BDay()
         start_day = end_day - (lkbk-1) * datetools.BDay()
-        lkbk_days = date_range(start_day, end_day, freq='B')
+        
         today_time_range = day_time_range(today)
-             
-        row = liq_at_start.ix[start_day,:]
-        row = row[np.argsort(row)[::-1]]
-        topn_nasdaq = row.index[:ntop]
+        
+        lkbk_days = date_range(start_day, end_day, freq='B')
+        lkbk_days_range = None
+        for lkbk_day in lkbk_days:
+            mins = day_time_range(lkbk_day)
+            if lkbk_days_range is None:
+                lkbk_days_range = mins
+            else:
+                lkbk_days_range = lkbk_days_range.append(mins)
+            
+        vols = nasdaq_comp.ix[:, lkbk_days_range, 'Volume'].sum()
+        closes = nasdaq_comp.ix[:, lkbk_days_range, 'Close'].mean()
+        liqs = vols * closes
+        liqs = liqs / liqs.sum()
+        
+        liqs = liqs[np.argsort(liqs)[::-1]]
+        topn_nasdaq = liqs.index[:ntop]
+        
+        multiplier[today] = liqs[topn_nasdaq]
         
         pct_close = nasdaq_comp.ix[topn_nasdaq, today_time_range, '% Change(close)']
+        pct_close = pct_close * multiplier[today]
         pct_liq_min = liq_mat.ix[today_time_range, topn_nasdaq]
+        pct_liq_min = pct_liq_min * multiplier[today]
         today_data_all[today] = Panel({
                                 '% Change(close)':pct_close,
                                 '% Liquidity 1min':pct_liq_min,}).transpose(2,0,1)
         
-        pct_close = DataFrame()
-        for lkbk_day in lkbk_days:
-            mins = day_time_range(lkbk_day)
-            pct_close = concat([pct_close, nasdaq_comp.ix[topn_nasdaq, mins, '% Change(close)']])
-        
-        pct_liq_min = DataFrame()
-        for lkbk_day in lkbk_days:
-            mins = day_time_range(lkbk_day)
-            pct_liq_min = concat([pct_liq_min, liq_mat.ix[mins,topn_nasdaq]])
-            pct_liq_min = pct_liq_min.apply(lambda x : x / x.sum() * 100.0, axis=1)
-            
-        pct_liq_day = {}
-        for lkbk_day in lkbk_days:
-            liq_all = liq_at_start.ix[lkbk_day, :]
-            liq_all = (liq_all / liq_all.sum() * 100.0)
-            liq_all = liq_all.ix[topn_nasdaq]
-            pct_liq_day[lkbk_day] = liq_all
-            
-        pct_liq_day = DataFrame(pct_liq_day).T
-        pct_liq_day = pct_liq_day.reindex(index=pct_close.index, method='pad')
-        
+        pct_close = nasdaq_comp.ix[topn_nasdaq, lkbk_days_range, '% Change(close)']
+        pct_close = pct_close * multiplier[today]
+        pct_liq_min = liq_mat.ix[lkbk_days_range, topn_nasdaq]
+        pct_liq_min = pct_liq_min * multiplier[today]
         lkbk_days_data_all[today] = Panel({
                                     '% Change(close)':pct_close,
-                                    '% Liquidity 1min':pct_liq_min,
-                                    '% Liquidity 3day':pct_liq_day,}).transpose(2,0,1)
+                                    '% Liquidity 1min':pct_liq_min,}).transpose(2,0,1)
+                                    
     except:
         print sys.exc_info()
         print "no record found, maybe a holiday"
@@ -122,15 +124,32 @@ for today in training_days:
 chosen_date = training_days[0]
 
 today_data = today_data_all[chosen_date]
-print today_data
-
 lkbk_days_data = lkbk_days_data_all[chosen_date]
-print lkbk_days_data
 
-print lkbk_days_data.ix[:,'% Change(close)',:].head()
-print lkbk_days_data.ix[:,'% Liquidity 1min',:].head()
-print lkbk_days_data.ix[:,'% Liquidity 3day',:].head()
+close_name = '% Change(close)'
+liq_name = '% Liquidity 1min'
 
+today_close = today_data.ix[:,close_name,:]
+today_liq = today_data.ix[:,liq_name,:]
+today_close.columns = [(x + '_close') for x in today_close.columns]
+today_liq.columns = [(x + '_liq') for x in today_liq.columns]
+
+lkbk_close = lkbk_days_data.ix[:,close_name,:]
+lkbk_liq = lkbk_days_data.ix[:,liq_name,:]
+lkbk_close.columns = [(x + '_close') for x in lkbk_close.columns]
+lkbk_liq.columns = [(x + '_liq') for x in lkbk_liq.columns]
+
+test_set = concat([today_close,today_liq], axis=1)
+train_set = concat([lkbk_close, lkbk_liq], axis=1)
+print test_set.ix[:5,:10]
+print train_set.ix[:5,:10]
+
+# kNN
+knn = select_model.KNN(train_set, qqq)
+for k in [1,2,3,4,5,6,7]:
+    st = time.time()
+    error = knn.error_score(test_set, k)
+    print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs)' % (ntop, lkbk, k, error, time.time()-st)
 
 
 
