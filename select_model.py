@@ -102,19 +102,19 @@ for today in training_days:
         
         pct_close = nasdaq_comp.ix[topn_nasdaq, today_time_range, '% Change(close)']
         pct_close = pct_close * multiplier[today]
-        pct_liq_min = liq_mat.ix[today_time_range, topn_nasdaq]
+        pct_liq_min = liq_mat.ix[today_time_range, topn_nasdaq].pct_change().fillna(0)
         pct_liq_min = pct_liq_min * multiplier[today]
         today_data_all[today] = Panel({
                                 '% Change(close)':pct_close,
-                                '% Liquidity 1min':pct_liq_min,}).transpose(2,0,1)
+                                '% Change(liquidity)':pct_liq_min,}).transpose(2,0,1)
         
         pct_close = nasdaq_comp.ix[topn_nasdaq, lkbk_days_range, '% Change(close)']
         pct_close = pct_close * multiplier[today]
-        pct_liq_min = liq_mat.ix[lkbk_days_range, topn_nasdaq]
+        pct_liq_min = liq_mat.ix[lkbk_days_range, topn_nasdaq].pct_change().fillna(0)
         pct_liq_min = pct_liq_min * multiplier[today]
         lkbk_days_data_all[today] = Panel({
                                     '% Change(close)':pct_close,
-                                    '% Liquidity 1min':pct_liq_min,}).transpose(2,0,1)
+                                    '% Change(liquidity)':pct_liq_min,}).transpose(2,0,1)
                                     
     except:
         print sys.exc_info()
@@ -127,7 +127,7 @@ today_data = today_data_all[chosen_date]
 lkbk_days_data = lkbk_days_data_all[chosen_date]
 
 close_name = '% Change(close)'
-liq_name = '% Liquidity 1min'
+liq_name = '% Change(liquidity)'
 
 today_close = today_data.ix[:,close_name,:]
 today_liq = today_data.ix[:,liq_name,:]
@@ -139,8 +139,8 @@ lkbk_liq = lkbk_days_data.ix[:,liq_name,:]
 lkbk_close.columns = [(x + '_close') for x in lkbk_close.columns]
 lkbk_liq.columns = [(x + '_liq') for x in lkbk_liq.columns]
 
-test_set = concat([today_close,today_liq], axis=1)
-train_set = concat([lkbk_close, lkbk_liq], axis=1)
+test_set = today_close #concat([today_close, today_liq], axis=1)
+train_set = lkbk_close #concat([lkbk_close, lkbk_liq], axis=1)
 print test_set.ix[:5,:10]
 print train_set.ix[:5,:10]
 
