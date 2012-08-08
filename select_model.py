@@ -64,7 +64,7 @@ def day_time_range(date):
                       date.replace(hour=16,minute=0),
                       freq='Min')
 
-lkbk = 3
+lkbk = 5
 ntop = 20
     
 training_days = set_start_time(training_set[lkbk:])
@@ -139,19 +139,35 @@ lkbk_liq = lkbk_days_data.ix[:,liq_name,:]
 lkbk_close.columns = [(x + '_close') for x in lkbk_close.columns]
 lkbk_liq.columns = [(x + '_liq') for x in lkbk_liq.columns]
 
-test_set = today_close #concat([today_close, today_liq], axis=1)
-train_set = lkbk_close #concat([lkbk_close, lkbk_liq], axis=1)
-print test_set.ix[:5,:10]
-print train_set.ix[:5,:10]
-
+print '%dclose and %dliq'
+test_set = concat([today_close, today_liq], axis=1)
+train_set = concat([lkbk_close, lkbk_liq], axis=1)
 # kNN
 knn = select_model.KNN(train_set, qqq)
 for k in [1,2,3,4,5,6,7]:
     st = time.time()
     error = knn.error_score(test_set, k)
-    print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs)' % (ntop, lkbk, k, error, time.time()-st)
+    print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, chosen_date)
 
+print '%dclose'
+test_set = today_close #concat([today_close, today_liq], axis=1)
+train_set = lkbk_close #concat([lkbk_close, lkbk_liq], axis=1)
+# kNN
+knn = select_model.KNN(train_set, qqq)
+for k in [1,2,3,4,5,6,7]:
+    st = time.time()
+    error = knn.error_score(test_set, k)
+    print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, chosen_date)
 
+print '%dliq'
+test_set = today_liq #concat([today_close, today_liq], axis=1)
+train_set = lkbk_liq #concat([lkbk_close, lkbk_liq], axis=1)
+# kNN
+knn = select_model.KNN(train_set, qqq)
+for k in [1,2,3,4,5,6,7]:
+    st = time.time()
+    error = knn.error_score(test_set, k)
+    print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, chosen_date)
 
 
 
