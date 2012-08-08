@@ -13,7 +13,7 @@ dev_mode = False
 
 # Generate series of business days from QQQ earliest date to QQQ latest date
 qqq_start = datetime(1999,3,10)
-qqq_end = datetime(2012,7,19) + timedelta(days=-60)
+qqq_end = datetime(2012,7,19) - 60 * datetools.BDay()
 trading_days = date_range(qqq_start, qqq_end, freq='B')
 
 # Pick a date at random
