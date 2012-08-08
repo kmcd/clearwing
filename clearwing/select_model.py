@@ -112,10 +112,6 @@ class KNN:
                 
                 # weighted by gaussian
                 #vals[self.qqq_classify(idx)] +=  numpredict.gaussian(dlist[i][0])
-        s = sum(vals)
-        if s == 0:
-            return 0
-        return s / abs(s)
         if vals[1] == vals[2]:
             return 0
         return argmax(vals)
