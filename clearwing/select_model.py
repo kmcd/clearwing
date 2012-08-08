@@ -1,5 +1,5 @@
 from datetime import timedelta
-from numpy import linalg
+from numpy import linalg, argmax
 from scipy.spatial import distance, KDTree
 from pandas.tseries.index import date_range
 from pandas import Series
@@ -60,7 +60,7 @@ class KNN:
         ave = 0.0
         for i in range(0, k_fold):
             x = self.data.index[r != i]
-            y = self.data.index[r == i];
+            y = self.data.index[r == i]
             trainset = self.data.ix[x, :]
             testset = self.data.ix[y, :]
             knn = KNN(trainset, self.qqq)
@@ -91,30 +91,34 @@ class KNN:
         if self.qqq.ix[idx, 'is_long']:
             return 1
         elif self.qqq.ix[idx, 'is_short']:
-            return -1
+            return 2
         else:
             return 0
     
     def estimate(self, vec, k=7):
         # Get sorted distances
         dlist = self.getdistances(self.data,vec)
-        avg = 0.0
+        vals = [0,0,0]
         
         # Take the average of the top k results
         for i in range(k):
             idx = self.data.index[dlist[i][1]]
             if idx in self.qqq.index:
                 # majority vote
-                #avg = avg + self.qqq_classify(idx)
+                #vals[self.qqq_classify(idx)] +=  self.qqq_classify(idx)
                 
                 # weighted by mahalanobis distance
-                avg += self.qqq_classify(idx) * numpredict.inverseweight(dlist[i][0])
+                vals[self.qqq_classify(idx)] += numpredict.inverseweight(dlist[i][0])
                 
                 # weighted by gaussian
-                #avg = avg + self.qqq_classify(idx) * numpredict.gaussian(dlist[i][0])
-        if avg == 0:
+                #vals[self.qqq_classify(idx)] +=  numpredict.gaussian(dlist[i][0])
+        s = sum(vals)
+        if s == 0:
             return 0
-        return avg / abs(avg)
+        return s / abs(s)
+        if vals[1] == vals[2]:
+            return 0
+        return argmax(vals)
     
     def error_score(self, inpt, k=7):
         ncor = 0.
