@@ -96,70 +96,63 @@ for i in range(len(training_set)):
         print sys.exc_info()
         print "no record found, maybe a holiday"
 
-f = open(dir_name+'/euclidean_'+set_num+'.txt', 'w')
+# backup file of console prints, just in case
+f = open(dir_name+'/error_mahalanobis_'+set_num+'.txt', 'w')
+
+def _print(f, string):
+    print string
+    f.write(string+'\n')
                 
 sum_err = {}
 ct = 0
 for k in range(11): sum_err[k] = 0
+for i in range(15):
+    try:
+        _set = range((lkbk+1)*i,(lkbk+1)*(i+1)+1)
+        today = training_set[_set[lkbk]]
+        lkbk_days = [training_set[x] for x in _set[:lkbk]]
+        today_data = today_data_all[today].ix[:10,:,:]
+        
+        lkbk_days_data = [today_data_all[x] for x in lkbk_days]
+        lkbk_days_data = concat(lkbk_days_data, axis=2)
+        lkbk_days_data = lkbk_days_data.ix[today_data.items,:,:]
 
-for j in range(5): # do 15 times
-    idx = range(60)
-    shuffle(idx)
-    for i in range(15):
-        try:
-            _set = idx[(lkbk+1)*i : (lkbk+1)*(i+1)]
-            _set.sort()
-            today = training_set[_set[lkbk]]
-            lkbk_days = [training_set[x] for x in _set[:lkbk]]
-            today_data = today_data_all[today].ix[:10,:,:]
-            
-            lkbk_days_data = [today_data_all[x] for x in lkbk_days]
-            lkbk_days_data = concat(lkbk_days_data, axis=2)
-            lkbk_days_data = lkbk_days_data.ix[today_data.items,:,:]
-            
-            print '\n\n>>>>>>>>>>> set %d' % i
-            print 'today = %s' % today
-            print 'lkbk_days = %s' % [x.year for x in lkbk_days]
-            print 'top10 nasdaq components : %s' % today_data.items
+        _print(f, '\n\n>>>>>>>>>>> set %d' % i )
+        _print(f, 'today = %s' % today )
+        _print(f, 'lkbk_days = %s' % [x.year for x in lkbk_days] )
+        _print(f, 'top10 nasdaq components : %s' % today_data.items )
 
-            f.write( '\n\n>>>>>>>>>>> set %d\n' % i )
-            f.write( 'today = %s\n' % today )
-            f.write( 'lkbk_days = %s\n' % [x.year for x in lkbk_days] )
-            f.write( 'top10 nasdaq components : %s\n' % today_data.items )
+        close_name = '% Change(close)'
+        liq_name = '% Change(liquidity)'
 
-            close_name = '% Change(close)'
-            liq_name = '% Change(liquidity)'
+        today_close = today_data.ix[:,close_name,:]
+        today_liq = today_data.ix[:,liq_name,:]
+        today_close.columns = [(x + '_close') for x in today_close.columns]
+        today_liq.columns = [(x + '_liq') for x in today_liq.columns]
 
-            today_close = today_data.ix[:,close_name,:]
-            today_liq = today_data.ix[:,liq_name,:]
-            today_close.columns = [(x + '_close') for x in today_close.columns]
-            today_liq.columns = [(x + '_liq') for x in today_liq.columns]
+        lkbk_close = lkbk_days_data.ix[:,close_name,:]
+        lkbk_liq = lkbk_days_data.ix[:,liq_name,:]
+        lkbk_close.columns = [(x + '_close') for x in lkbk_close.columns]
+        lkbk_liq.columns = [(x + '_liq') for x in lkbk_liq.columns]
+        
+        day_err = {}
+        test_set = today_close #concat([today_close, today_liq], axis=1)
+        train_set = lkbk_close #concat([lkbk_close, lkbk_liq], axis=1)
+        # kNN
+        knn = select_model.KNN(train_set, qqq)
+        for k in [5,6,7]:
+            st = time.time()
+            error = knn.error_score(test_set, k)
+            day_err[k] = error
+            sum_err[k] += error
+            _print(f,'(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, today) )
+        _print(f,'%s' % day_err)
+        ct += 1
+    except:
+        print sys.exc_info()
 
-            lkbk_close = lkbk_days_data.ix[:,close_name,:]
-            lkbk_liq = lkbk_days_data.ix[:,liq_name,:]
-            lkbk_close.columns = [(x + '_close') for x in lkbk_close.columns]
-            lkbk_liq.columns = [(x + '_liq') for x in lkbk_liq.columns]
-            
-            day_err = {}
-            test_set = today_close #concat([today_close, today_liq], axis=1)
-            train_set = lkbk_close #concat([lkbk_close, lkbk_liq], axis=1)
-            # kNN
-            knn = select_model.KNN(train_set, qqq)
-            for k in [5,6,7,8]:
-                st = time.time()
-                error = knn.error_score(test_set, k)
-                day_err[k] = error
-                sum_err[k] += error
-                print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, today)
-                f.write('(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s\n' % (ntop, lkbk, k, error, time.time()-st, today) )
-            print day_err
-            f.write('%s\n' % day_err)
-            ct += 1
-        except:
-            print sys.exc_info()
-print sum_err
+_print(f, sum_err)
 for k in range(8):
-    print sum_err[k] / ct
-    f.write('%f\n' % (sum_err[k] / ct))
+    _print(f,'%f' % (sum_err[k] / ct))
 f.close() 
 
