@@ -1,6 +1,6 @@
 """
 usage:
-python select_model.py <set_num>
+python select_model_random.py <set_num>
 """
 from random import sample, shuffle
 from clearwing import select_model, utils
