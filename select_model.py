@@ -64,7 +64,7 @@ def day_time_range(date):
                       date.replace(hour=16,minute=0),
                       freq='Min')
 
-lkbk = 5
+lkbk = 3
 ntop = 10
     
 training_days = set_start_time(training_set[lkbk:])
@@ -73,6 +73,7 @@ today_data_all = {}
 lkbk_days_data_all = {}
 multiplier = {}
 
+# This should be stored in h5
 for today in training_days:
     print 'processing %s' % today
     try:
@@ -121,7 +122,7 @@ for today in training_days:
         print "no record found, maybe a holiday"
 
 
-neighbours = range(5,10)
+neighbours = [7]
 print '%dclose'
 
 for chosen_date in training_days:
@@ -129,20 +130,14 @@ for chosen_date in training_days:
     lkbk_days_data = lkbk_days_data_all[chosen_date]
     
     close_name = '% Change(close)'
-    liq_name = '% Change(liquidity)'
-    
     today_close = today_data.ix[:,close_name,:]
-    today_liq = today_data.ix[:,liq_name,:]
     today_close.columns = [(x + '_close') for x in today_close.columns]
-    today_liq.columns = [(x + '_liq') for x in today_liq.columns]
     
     lkbk_close = lkbk_days_data.ix[:,close_name,:]
-    lkbk_liq = lkbk_days_data.ix[:,liq_name,:]
     lkbk_close.columns = [(x + '_close') for x in lkbk_close.columns]
-    lkbk_liq.columns = [(x + '_liq') for x in lkbk_liq.columns]
     
-    test_set = today_close #concat([today_close, today_liq], axis=1)
-    train_set = lkbk_close #concat([lkbk_close, lkbk_liq], axis=1)
+    test_set = today_close
+    train_set = lkbk_close
     
     knn = select_model.KNN(train_set, qqq)
     
@@ -151,22 +146,3 @@ for chosen_date in training_days:
         error = knn.error_score(test_set, k)
         print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, chosen_date)
     
-# print '%dclose and %dliq'
-# test_set = concat([today_close, today_liq], axis=1)
-# train_set = concat([lkbk_close, lkbk_liq], axis=1)
-# 
-# knn = select_model.KNN(train_set, qqq)
-# for k in neighbours:
-    # st = time.time()
-    # error = knn.error_score(test_set, k)
-    # print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, chosen_date)
-
-# print '%dliq'
-# test_set = today_liq #concat([today_close, today_liq], axis=1)
-# train_set = lkbk_liq #concat([lkbk_close, lkbk_liq], axis=1)
-# # kNN
-# knn = select_model.KNN(train_set, qqq)
-# for k in neighbours:
-    # st = time.time()
-    # error = knn.error_score(test_set, k)
-    # print '(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, chosen_date)
