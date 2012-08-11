@@ -77,11 +77,10 @@ class KNN:
             vec2 = data.ix[i,:]
             
             # Add the distance and the index
-            distancelist.append((mahalanobis_dist(vec1,vec2,VI=VI),i))
-            #distancelist.append((euclidean(vec1, vec2),i))
+            # distancelist.append((mahalanobis_dist(vec1,vec2,VI=VI),i))
+            distancelist.append((euclidean(vec1, vec2),i))
         
         # Sort by distance
-        # Should this not be reversed - ie largest to lowest?
         distancelist.sort()
         return distancelist
         
@@ -106,10 +105,11 @@ class KNN:
                 #vals[self.qqq_classify(idx)] +=  self.qqq_classify(idx)
                 
                 # weighted by mahalanobis distance
-                vals[self.qqq_classify(idx)] += numpredict.inverseweight(dlist[i][0])
+                # vals[self.qqq_classify(idx)] += numpredict.inverseweight(dlist[i][0])
                 
                 # weighted by gaussian
-                #vals[self.qqq_classify(idx)] +=  numpredict.gaussian(dlist[i][0])
+                vals[self.qqq_classify(idx)] +=  numpredict.gaussian(dlist[i][0])
+                
         if vals[1] == vals[2]:
             return 0
         return argmax(vals)

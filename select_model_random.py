@@ -106,6 +106,7 @@ def _print(f, string):
 sum_err = {}
 ct = 0
 for k in range(11): sum_err[k] = 0
+
 for i in range(15):
     try:
         _set = range((lkbk+1)*i,(lkbk+1)*(i+1)+1)
@@ -140,7 +141,7 @@ for i in range(15):
         train_set = lkbk_close #concat([lkbk_close, lkbk_liq], axis=1)
         # kNN
         knn = select_model.KNN(train_set, qqq)
-        for k in [5,6,7]:
+        for k in range(5,10):
             st = time.time()
             error = knn.error_score(test_set, k)
             day_err[k] = error
