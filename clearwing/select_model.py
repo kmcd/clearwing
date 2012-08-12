@@ -60,7 +60,7 @@ class KNN:
         for i in range(k):
             idx = self.data.index[dlist[i][1]]
             if idx in self.qqq.index:
-                vals[self.qqq_classify(idx)] +=  numpredict.gaussian(dlist[i][0])
+                vals[self.qqq_classify(idx)] +=  numpredict.inverseweight(dlist[i][0])
                 
         if vals[1] == vals[2]:
             return 0
