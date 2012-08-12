@@ -94,11 +94,38 @@ print '\n\n>>> Nasdaq comp'
 print nasdaq_comp
 
 qqq = concat(qqq_components)
+qqq_long = {}
+qqq_short = {}
+for i in range(len(qqq)):
+    t = qqq.index[i]
+    if t.hour == 16:
+        continue
+    qqq_long[t] = select_model.is_long(qqq, t)
+    qqq_short[t] = select_model.is_short(qqq, t)
+    
+qqq['is_long'] = Series(qqq_long)
+qqq['is_short'] = Series(qqq_short)
+qqq['is_long'].fillna(value=False)
+qqq['is_short'].fillna(value=False)
+
 print '\n\n>>> QQQ'
 print qqq.head()
 print qqq.tail()
 
+
+# compute for liquidity (Volume * Close)
+# converted to per million units for printing
+close_price_mat = nasdaq_comp.ix[:,:,'Close']
+vol_mat = nasdaq_comp.ix[:,:,'Volume']
+liq_mat = close_price_mat * vol_mat / 1000000
+liq_mat = liq_mat.fillna(value=0)
+print '\n\n>>> Nasdaq Liquidity in millions'
+for i in range(0,len(liq_mat.columns),10):
+    print liq_mat.ix[:5,i:i+10]
+
 utils.save_object(store, nasdaq_comp, 'nasdaq_comp')
 utils.save_object(store, qqq, 'qqq')
+utils.save_object(store, vol_mat, 'vol_mat')
+utils.save_object(store, liq_mat, 'liq_mat')
 print store
 
