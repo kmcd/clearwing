@@ -39,7 +39,7 @@ class KNN:
         
         for i in range(len(data)):
             vec2 = data.ix[i,:]
-            distancelist.append((euclidean(vec1, vec2),i))
+            distancelist.append((distance.euclidean(vec1, vec2),i))
         
         distancelist.sort()
         return distancelist
