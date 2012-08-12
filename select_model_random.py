@@ -65,10 +65,13 @@ lkbk = 3
 ntop = 10
 
 today_data_all = {}
+lkbk_days_data_all = {}
 multiplier = {}
 
 for i in range(len(training_set)):
     today = training_set[i]
+    lkbk_days = utils.gen_lkbk_days(today=today)
+    lkbk_days = [datetime.strptime(x,'%Y%m%d') for x in lkbk_days]
     print 'processing %s' % today
     try:
         today_time_range = day_time_range(today)
@@ -91,37 +94,43 @@ for i in range(len(training_set)):
         today_data_all[today] = Panel({
                                 '% Change(close)':pct_close,
                                 '% Change(liquidity)':pct_liq_min,}).transpose(2,0,1)
+                                
+        lkbk_days_range = None
+        for lkbk_day in lkbk_days:
+            mins = day_time_range(lkbk_day)
+            if lkbk_days_range is None:
+                lkbk_days_range = mins
+            else:
+                lkbk_days_range = lkbk_days_range.append(mins)
+                
+        pct_close = nasdaq_comp.ix[topn_nasdaq, lkbk_days_range, '% Change(close)']
+        pct_close = pct_close * multiplier[today]
+        pct_liq_min = liq_mat.ix[lkbk_days_range, topn_nasdaq].pct_change().fillna(0)
+        pct_liq_min = pct_liq_min * multiplier[today]
+        lkbk_days_data_all[today] = Panel({
+                                    '% Change(close)':pct_close,
+                                    '% Change(liquidity)':pct_liq_min,}).transpose(2,0,1)
                                     
     except:
         print sys.exc_info()
         print "no record found, maybe a holiday"
 
 # backup file of console prints, just in case
-f = open(dir_name+'/error_mahalanobis_'+set_num+'.txt', 'w')
+f = open(dir_name+'/error_euclidean_'+set_num+'.txt', 'w')
 
-def _print(f, string):
-    print string
-    f.write(string+'\n')
-                
 sum_err = {}
 ct = 0
 for k in range(11): sum_err[k] = 0
 
-for i in range(15):
+for i in range(len(training_set)):
     try:
-        _set = range((lkbk+1)*i,(lkbk+1)*(i+1)+1)
-        today = training_set[_set[lkbk]]
-        lkbk_days = [training_set[x] for x in _set[:lkbk]]
+        today = training_set[i]
         today_data = today_data_all[today].ix[:10,:,:]
+        lkbk_days_data = lkbk_days_data_all[today].ix[today_data.items,:,:]
         
-        lkbk_days_data = [today_data_all[x] for x in lkbk_days]
-        lkbk_days_data = concat(lkbk_days_data, axis=2)
-        lkbk_days_data = lkbk_days_data.ix[today_data.items,:,:]
-
-        _print(f, '\n\n>>>>>>>>>>> set %d' % i )
-        _print(f, 'today = %s' % today )
-        _print(f, 'lkbk_days = %s' % [x.year for x in lkbk_days] )
-        _print(f, 'top10 nasdaq components : %s' % today_data.items )
+        utils._print(f, '\n\n>>>>>>>>>>> set %d' % (i+1) )
+        utils._print(f, 'today = %s' % today )
+        utils._print(f, 'top10 nasdaq components : %s' % today_data.items )
 
         close_name = '% Change(close)'
         liq_name = '% Change(liquidity)'
@@ -146,14 +155,14 @@ for i in range(15):
             error = knn.error_score(test_set, k)
             day_err[k] = error
             sum_err[k] += error
-            _print(f,'(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, today) )
-        _print(f,'%s' % day_err)
+            utils._print(f,'(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, today) )
+        utils._print(f,'%s' % day_err)
         ct += 1
     except:
         print sys.exc_info()
 
-_print(f, sum_err)
-for k in range(8):
-    _print(f,'%f' % (sum_err[k] / ct))
+utils._print(f, str(sum_err))
+for k in range(5,10):
+    utils._print(f,'%f' % (sum_err[k] / ct))
 f.close() 
 
