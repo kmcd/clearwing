@@ -56,7 +56,7 @@ else:
     start_day = sample(trading_days, 1)[0]
     if args.chosen_day is not None:
         start_day = datetime.strptime(args.chosen_day, '%Y%m%d')
-    training_set = date_range(start_day, periods=60, freq='B')
+    training_set = date_range(start_day, periods=args.ndays*(args.lkbk+1), freq='B')
     training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
     # h5 savefile

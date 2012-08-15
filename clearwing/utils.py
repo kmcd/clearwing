@@ -35,3 +35,17 @@ def _print(f, string):
     print string
     f.write(string+'\n')
     
+def set_start_time(dates):
+    """
+    set all date's time to 9:30
+    """
+    return dates.shift(9, freq='H').shift(30, freq='Min')
+    
+def day_time_range(date):
+    """
+    generate range of time from 9:30 to 16:00 for the given date
+    """
+    return date_range(date.replace(hour=9,minute=30),
+                      date.replace(hour=16,minute=0),
+                      freq='Min')
+
