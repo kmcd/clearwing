@@ -10,32 +10,58 @@ import argparse
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--dir', dest='dir_name', default='data/training')
-parser.add_argument('--random', type=bool, default=False)
-parser.add_argument('--lkbk', type=int, default=3)
-parser.add_argument('--ntop', type=int, default=10)
-parser.add_argument('--n', dest='set_num', type=int, default=1)
-parser.add_argument('--sday', dest='start_day', default=None)
+parser.add_argument('-d','--dir', dest='dir_name', default='data/training', help='directory to save datasets, reports')
+parser.add_argument('-r','--random', dest='is_random', type=bool, const=True, 
+                                default=False, nargs='?', help='generate random days or consecutive days')
+parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
+parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top nasdaq components to use')
+parser.add_argument('-sn','--setn', dest='set_num', type=int, default=1, help='data set number')
+parser.add_argument('-sd','--sday', dest='start_day', help='start date to use')
+parser.add_argument('-ed','--eday', dest='end_day', help='end date to use')
+parser.add_argument('-nd','--ndays', type=int, default=15, help='number of random days to generate')
 args = parser.parse_args()
 
 # for debugging/printing purposes
 set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
 
-# Generate series of business days from QQQ earliest date to QQQ latest date
-qqq_start = datetime(1999,3,10)
-qqq_end = datetime(2012,7,19) - 60 * datetools.BDay()
+# Generate series of business days from earliest date to latest date
+qqq_start = args.start_day or datetime(1999,3,10)
+qqq_end = args.end_day or datetime(2012,7,19)
+if not args.is_random:
+    qqq_end = qqq_end - 60 * datetools.BDay()
 trading_days = date_range(qqq_start, qqq_end, freq='B')
 
-# Pick a date at random
-# Generate a list of 60 business days starting from the random date chosen
-start_day = sample(trading_days, 1)[0]
-training_set = date_range(start_day, periods=60, freq='B')
-training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
+if args.is_random:
+    # Pick 15 days at random
+    training_set = sample(trading_days, 15)
+    training_set.sort()
+    training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
-# h5 savefile
-if not os.path.exists(args.dir_name):
-    os.makedirs(args.dir_name)
-store = utils.create_hdf5(args.dir_name+'/'+start_day.strftime('%Y%m%d'))
+    # h5 savefile
+    if not os.path.exists(args.dir_name):
+        os.makedirs(args.dir_name)
+    store = utils.create_hdf5(args.dir_name+'/dataset_'+str(args.set_num))
+
+    # save dates to file
+    f = open(args.dir_name+'/dates_set_'+str(args.set_num)+'.txt', 'w')
+    for date in training_set_str:
+        f.write(date+'\n')
+    f.close()
+    
+    training_set_str = utils.gen_lkbk_days(day_list=training_set)
+else:
+    # Pick a date at random
+    # Generate a list of 60 business days starting from the random date chosen
+    start_day = sample(trading_days, 1)[0]
+    if args.start_day is not None:
+        start_day = datetime.strptime(args.start_day, '%Y%m%d')
+    training_set = date_range(start_day, periods=60, freq='B')
+    training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
+
+    # h5 savefile
+    if not os.path.exists(args.dir_name):
+        os.makedirs(args.dir_name)
+    store = utils.create_hdf5(args.dir_name+'/'+start_day.strftime('%Y%m%d'))
 
 components = {}
 qqq_components = []
@@ -117,3 +143,4 @@ utils.save_object(store, qqq, 'qqq')
 utils.save_object(store, vol_mat, 'vol_mat')
 utils.save_object(store, liq_mat, 'liq_mat')
 print store
+
