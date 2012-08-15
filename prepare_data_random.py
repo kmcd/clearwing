@@ -23,8 +23,8 @@ set_num = 1 if not len(sys.argv) > 1 else int(sys.argv[1])
 lkbk = 3 if not len(sys.argv) > 2 else int(sys.argv[1])
 
 # Generate series of business days from QQQ earliest date to QQQ latest date
-qqq_start = datetime(1999,3,10)
-qqq_end = datetime(2012,7,19) - 60 * datetools.BDay()
+qqq_start = datetime(2010,1,1)
+qqq_end = datetime(2012,7,19)
 trading_days = date_range(qqq_start, qqq_end, freq='B')
 
 # Pick 15 days at random
@@ -102,7 +102,6 @@ for i in range(len(qqq)):
         continue
     qqq_long[t] = select_model.is_long(qqq, t)
     qqq_short[t] = select_model.is_short(qqq, t)
-    
 qqq['is_long'] = Series(qqq_long)
 qqq['is_short'] = Series(qqq_short)
 qqq['is_long'].fillna(value=False)

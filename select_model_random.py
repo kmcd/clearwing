@@ -110,7 +110,7 @@ for i in range(len(training_set)):
         print "no record found, maybe a holiday"
 
 # backup file of console prints, just in case
-f = open(dir_name+'/sampled1000_error_euclidean_'+set_num+'.txt', 'w')
+f = open(dir_name+'/error_rates_'+set_num+'.txt', 'w')
 
 sum_err = {}
 ct = 0
@@ -155,8 +155,8 @@ for i in range(len(training_set)):
     except:
         print sys.exc_info()
 
-utils._print(f, str(sum_err))
+utils._print(f, '\n\n')
 for k in range(5,10):
-    utils._print(f,'%f' % (sum_err[k] / ct))
+    utils._print(f,'k=%d: error_mean = %f' % (k, sum_err[k] / ct))
 f.close() 
 
