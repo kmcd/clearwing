@@ -17,6 +17,26 @@ qqq = store['qqq']
 vol_mat = store['vol_mat']
 liq_mat = store['liq_mat']
 
+qqq_long = {}
+qqq_short = {}
+for i in range(len(qqq)):
+    t = qqq.index[i]
+    if t.hour == 16:
+        continue
+    qqq_long[t] = select_model.is_long(qqq, t)
+    qqq_short[t] = select_model.is_short(qqq, t)
+qqq['is_long'] = Series(qqq_long)
+qqq['is_short'] = Series(qqq_short)
+qqq['is_long'].fillna(value=False)
+qqq['is_short'].fillna(value=False)
+
+print '\n\n>>> QQQ'
+print qqq.head()
+print qqq.tail()
+
+store['qqq'] = qqq
+
+
 f = open(dir_name+'/dates_set_'+set_num+'.txt')
 training_set_str = [line[:-1] for line in f]
 training_set = [datetime.strptime(x, '%Y%m%d').replace(hour=9, minute=30) for x in training_set_str]
@@ -90,7 +110,7 @@ for i in range(len(training_set)):
         print "no record found, maybe a holiday"
 
 # backup file of console prints, just in case
-f = open(dir_name+'/error_euclidean_'+set_num+'.txt', 'w')
+f = open(dir_name+'/sampled1000_error_euclidean_'+set_num+'.txt', 'w')
 
 sum_err = {}
 ct = 0
