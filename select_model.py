@@ -19,10 +19,11 @@ parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top na
 parser.add_argument('-sn','--setn', dest='set_num', type=int, default=1, help='data set number, required if random')
 parser.add_argument('-sd','--sday', dest='start_day', help='chosen start date, required if not random')
 parser.add_argument('-nd','--ndays', type=int, default=15, help='number of random days to generate')
+parser.add_argument('-k', dest='k_range', type=int, nargs='*', default=[5,6,7,8,9], help='k values')
 
 args = parser.parse_args()
 lkbk = args.lkbk
-ntop = args.ntop    
+ntop = args.ntop
 
 # open .h5, fetch stored values from prepare_data
 if args.is_random:
@@ -107,7 +108,7 @@ for i in range(len(training_set)):
         utils._print(log_file, "no record found, maybe a holiday")
 
 error_rates = {}
-for k in range(11): error_rates[k] = []
+for k in args.k_range: error_rates[k] = []
 
 for i in range(len(training_set)):
     try:
@@ -139,7 +140,7 @@ for i in range(len(training_set)):
         
         # kNN
         knn = select_model.KNN(train_set, qqq)
-        for k in range(5,10):
+        for k in args.k_range:
             st = time.time()
             error = knn.error_score(test_set, k)
             error_rates[k].append(error)
@@ -147,8 +148,13 @@ for i in range(len(training_set)):
     except:
         print sys.exc_info()
 
-utils._print(log_file, '\n\n')
-for k in range(5,10):
-    utils._print(log_file,'k=%d: error_mean = %f, errod_std = %f' % (k, np.mean(error_rates[k]), np.std(error_rates[k])))
-log_file.close() 
+error_rates = DataFrame(error_rates)
+utils._print(log_file, '\nerror_rates:')
+utils._print(log_file, error_rates)
+utils._print(log_file, '\nerror_mean:')
+utils._print(log_file, error_rates.apply(np.mean))
+utils._print(log_file, '\nerror_std:')
+utils._print(log_file, error_rates.apply(np.std))
+
+
 

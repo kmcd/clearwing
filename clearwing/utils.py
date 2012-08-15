@@ -33,7 +33,8 @@ def gen_lkbk_days(today=None, day_list=None, lkbk=3):
 
 def _print(f, string):
     print string
-    f.write(string+'\n')
+    f.write(str(string))
+    f.write('\n')
     
 def set_start_time(dates):
     """
