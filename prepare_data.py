@@ -6,6 +6,17 @@ from clearwing import extract_data, select_model, utils
 from pandas import *
 import numpy as np
 import os, glob, sys
+import argparse
+
+# parse command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--dir', dest='dir_name', default='data/training')
+parser.add_argument('--random', type=bool, default=False)
+parser.add_argument('--lkbk', type=int, default=3)
+parser.add_argument('--ntop', type=int, default=10)
+parser.add_argument('--n', dest='set_num', type=int, default=1)
+parser.add_argument('--sday', dest='start_day', default=None)
+args = parser.parse_args()
 
 # for debugging/printing purposes
 set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
@@ -21,10 +32,10 @@ start_day = sample(trading_days, 1)[0]
 training_set = date_range(start_day, periods=60, freq='B')
 training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
-dir_name = 'data/training'
-if not os.path.exists(dir_name):
-    os.makedirs(dir_name)
-store = utils.create_hdf5(dir_name+'/'+start_day.strftime('%Y%m%d'))
+# h5 savefile
+if not os.path.exists(args.dir_name):
+    os.makedirs(args.dir_name)
+store = utils.create_hdf5(args.dir_name+'/'+start_day.strftime('%Y%m%d'))
 
 components = {}
 qqq_components = []
