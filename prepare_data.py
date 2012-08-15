@@ -16,8 +16,9 @@ parser.add_argument('-r','--random', dest='is_random', type=bool, const=True,
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
 parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top nasdaq components to use')
 parser.add_argument('-sn','--setn', dest='set_num', type=int, default=1, help='data set number')
-parser.add_argument('-sd','--sday', dest='start_day', help='start date to use')
-parser.add_argument('-ed','--eday', dest='end_day', help='end date to use')
+parser.add_argument('-sd','--sday', dest='start_day', help='qqq start date to use')
+parser.add_argument('-ed','--eday', dest='end_day', help='qqq end date to use')
+parser.add_argument('-cd','--cday', dest='chosen_day', help='chosen start date')
 parser.add_argument('-nd','--ndays', type=int, default=15, help='number of random days to generate')
 args = parser.parse_args()
 
@@ -53,8 +54,8 @@ else:
     # Pick a date at random
     # Generate a list of 60 business days starting from the random date chosen
     start_day = sample(trading_days, 1)[0]
-    if args.start_day is not None:
-        start_day = datetime.strptime(args.start_day, '%Y%m%d')
+    if args.chosen_day is not None:
+        start_day = datetime.strptime(args.chosen_day, '%Y%m%d')
     training_set = date_range(start_day, periods=60, freq='B')
     training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
