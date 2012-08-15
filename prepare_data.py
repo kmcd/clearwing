@@ -1,3 +1,7 @@
+"""
+for usage, see:
+    python prepare_data.py -h
+"""
 # Get data by date
 # Pick a day at random from data set
 from random import sample
