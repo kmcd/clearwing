@@ -1,6 +1,6 @@
 """
 for usage, see:
-    python select_model.py -h
+    python select_model_index.py -h
 """
 from random import sample
 from clearwing import select_model, utils
