@@ -164,7 +164,7 @@ def save_data_of_set(_set, _store):
     print _store
 
                 
-save_data_of_set(train_set_str, test_store)
+save_data_of_set(train_set_str, train_store)
 save_data_of_set(validate_set_str, validate_store)
 save_data_of_set(test_set_str, test_store)
 
