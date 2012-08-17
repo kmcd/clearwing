@@ -50,3 +50,12 @@ def day_time_range(date):
                       date.replace(hour=16,minute=0),
                       freq='Min')
 
+def list_diff(a, b):
+    b = set(b)
+    return [aa for aa in a if aa not in b]
+    
+def save_dates_to_file(f, f_str):
+    for date in f_str:
+        f.write(date+'\n')
+    f.close()
+
