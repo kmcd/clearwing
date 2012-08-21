@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-i','--input', dest='in_dir', default='nasdaq_100', help='input directory')
 parser.add_argument('-t','--target', dest='target_dir', default='qqq_dir', help='target directory')
 parser.add_argument('-o','--output', dest='out_dir', default='data/training', help='directory to store text reports')
-parser.add_argument('-r','--range', type=int, default=[-0.03,0.03], nargs=2, help='number of top nasdaq components to use')
+parser.add_argument('-r','--range', type=int, default=[-0.03,0.03], nargs=2, help='long/short boundaries')
 parser.add_argument('-c','--consecutive', dest='is_random', type=bool, const=False, 
                                 default=True, nargs='?', help='generate random days or consecutive days')
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
@@ -141,8 +141,8 @@ def save_data_of_set(_set, _store):
         qqq_short[t] = select_model.is_short(qqq, t, args.range)
     qqq['is_long'] = Series(qqq_long)
     qqq['is_short'] = Series(qqq_short)
-    qqq['is_long'].fillna(value=False)
-    qqq['is_short'].fillna(value=False)
+    qqq['is_long'] = qqq['is_long'].fillna(value=False)
+    qqq['is_short'] = qqq['is_short'].fillna(value=False)
 
     print '\n\n>>> QQQ'
     print qqq.head()
