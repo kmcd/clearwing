@@ -6,23 +6,23 @@ from pandas import Series
 import numpredict
 import time, sys, random
 
-def is_long(df, curr_datetime):
+def is_long(df, curr_datetime, rng):
     next_datetime = curr_datetime + timedelta(minutes=1)
     current_close = df.ix[curr_datetime, 'Close']
     next_high = df.ix[next_datetime, 'High']
     next_low = df.ix[next_datetime, 'Low']
     next_close = df.ix[next_datetime, 'Close']
     
-    return (next_close - current_close) >= 0.03 and (next_low - current_close) > -0.03
+    return (next_close - current_close) >= max(rng) and (next_low - current_close) > min(rng)
              
-def is_short(df, curr_datetime):
+def is_short(df, curr_datetime, rng):
     next_datetime = curr_datetime + timedelta(minutes=1)
     current_close = df.ix[curr_datetime, 'Close']
     next_high = df.ix[next_datetime, 'High']
     next_low = df.ix[next_datetime, 'Low']
     next_close = df.ix[next_datetime, 'Close']
     
-    return (next_close - current_close) <= -0.03 and (next_high - current_close) < 0.03
+    return (next_close - current_close) <= min(rng) and (next_high - current_close) < max(rng)
 
 def get_top_dims(data, top_dims, start_date, end_date, top=10):
     idx = top_dims.ix[end_date].index
