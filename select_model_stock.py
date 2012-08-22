@@ -3,7 +3,7 @@ for usage, see:
     python select_model_stock.py -h
 """
 from random import sample
-from clearwing import select_model, utils
+from clearwing import select_model, utils, numpredict, optimization
 from datetime import datetime
 from pandas import *
 import sys, time
@@ -115,3 +115,33 @@ stock_primary = add_dimensions(stock_primary)
 stock_secondary = add_dimensions(stock_secondary)
 
 print stock_primary
+
+# file to backup console prints
+log_file = open(args.out_dir+'/log_'+args.dataset[:-3]+'.txt', 'w')
+
+today_data_all = {}
+lkbk_days_data_all = {}
+
+for i in range(len(training_set)):
+    today = training_set[i]
+    lkbk_days = utils.gen_lkbk_days(today=today)
+    lkbk_days = [datetime.strptime(x,'%Y%m%d') for x in lkbk_days]
+    utils._print(log_file,  'processing %s' % today)
+    try:
+        today_time_range = utils.day_time_range(today)
+        lkbk_days_range = None
+        for lkbk_day in lkbk_days:
+            mins = utils.day_time_range(lkbk_day)
+            if lkbk_days_range is None:
+                lkbk_days_range = mins
+            else:
+                lkbk_days_range = lkbk_days_range.append(mins)
+                    
+        today_data_all[today] = stock_primary.ix[today_time_range,:]
+        lkbk_days_data_all[today] = stock_primary.ix[lkbk_days_range,:]
+                                    
+    except:
+        utils._print(log_file, sys.exc_info())
+        utils._print(log_file, "no record found, maybe a holiday")
+
+

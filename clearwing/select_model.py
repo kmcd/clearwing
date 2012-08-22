@@ -3,7 +3,7 @@ from numpy import linalg, argmax
 from scipy.spatial import distance, KDTree
 from pandas.tseries.index import date_range
 from pandas import Series
-import numpredict
+import numpredict, utils
 import time, sys, random
 
 def is_long(df, curr_datetime, rng):
@@ -69,8 +69,7 @@ class KNN:
     def error_score(self, inpt, k=7):
         ncor = 0.
         count = 0
-        st = time.time()
-        
+        st = time.time()       
         for i in range(  len(inpt)  ):
             
             if inpt.index[i].hour == 16:
@@ -84,6 +83,71 @@ class KNN:
                 
                 if est == act:
                     ncor = ncor + 1
+                count = count + 1
+                
+        pct = 1 - (ncor / count)
+        return pct * 100.0
+        
+class CalculateWeights:
+    def __init__(self, data):
+        self.input = data['input']
+        self.target = data['target']
+        
+    def getdistances(self, data, vec1):
+        distancelist = []
+        
+        for i in range(len(data)):
+            vec2 = data.ix[i,:]
+            distancelist.append((distance.euclidean(vec1, vec2),i))
+        
+        distancelist.sort()
+        return distancelist
+
+        
+    def classifier_map(self, is_long, is_short):
+        if is_long:
+            return 1
+        elif is_short:
+            return 2
+        else:
+            return 0
+        
+    def classify(self, idx):
+        return self.classifier_map(self.target.ix[idx, 'is_long'], self.target.ix[idx, 'is_short'])
+    
+        
+    def estimate(self, vec, k=7):
+        dlist = self.getdistances(self.input,vec)
+        vals = [0,0,0]
+        
+        # Take the average of the top k results
+        for i in range(k):
+            idx = self.input.index[dlist[i][1]]
+            vals[self.classify(idx)] +=  numpredict.inverseweight(dlist[i][0])
+            print idx
+                
+        if vals[1] == vals[2]:
+            return 0
+        return argmax(vals)
+    
+    def optimize(self, data, k=7):
+        if self.weights is None:
+            self.weights = [0.5] * len(self.input.columns)
+        print 'done'
+        ncor = 0.
+        count = 0
+        st = time.time()       
+        for i in range(  len(data['input'])  ):
+            row = data['input'].ix[i,:]
+            act = self.classifier_map(data['target'].ix[i,'is_long'],data['target'].ix[i,'is_short'])
+            
+            if data['input'].index[i].hour == 16:
+                continue
+                
+            est = self.estimate(row, k)
+            
+            if est == act:
+                ncor = ncor + 1
                 count = count + 1
                 
         pct = 1 - (ncor / count)

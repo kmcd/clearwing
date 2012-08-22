@@ -1,5 +1,6 @@
 from pandas import *
 from datetime import datetime
+import random
 
 def create_hdf5(fname):
     store = HDFStore(fname + '.h5')
@@ -59,3 +60,5 @@ def save_dates_to_file(f, f_str):
         f.write(date+'\n')
     f.close()
 
+def sample_index(index, n):
+    return random.sample(index, n)

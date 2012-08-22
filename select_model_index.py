@@ -38,7 +38,7 @@ training_set_str = [line[:-1] for line in f]
 training_set = [datetime.strptime(x, '%Y%m%d').replace(hour=9, minute=30) for x in training_set_str]
 
 # file to backup console prints
-log_file = open(args.out_dir+'/log'+args.dataset[:-3]+'.txt', 'w')
+log_file = open(args.out_dir+'/log_'+args.dataset[:-3]+'.txt', 'w')
 
 today_data_all = {}
 lkbk_days_data_all = {}
@@ -97,7 +97,7 @@ for k in args.k_range: error_rates[k] = []
 
 for j in range(args.iters):
     print 'iter %d' % (j+1)
-    for i in sample(range(len(training_set)), args.ndays):
+    for today in sample(training_set, args.ndays):
         try:
             today = training_set[i]
             today_data = today_data_all[today].ix[:10,:,:]
