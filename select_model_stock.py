@@ -114,8 +114,6 @@ def add_dimensions(stock):
 stock_primary = add_dimensions(stock_primary)
 stock_secondary = add_dimensions(stock_secondary)
 
-print stock_primary
-
 # file to backup console prints
 log_file = open(args.out_dir+'/log_'+args.dataset[:-3]+'.txt', 'w')
 
@@ -143,5 +141,11 @@ for i in range(len(training_set)):
     except:
         utils._print(log_file, sys.exc_info())
         utils._print(log_file, "no record found, maybe a holiday")
+
+cw = select_model.CalculateWeights(today_data_all, lkbk_days_data_all)
+costf = numpredict.createcostfunction(cw, 5, training_set)
+optimization.annealingoptimize([(0.0,1.0)]*22, costf, step=0.01)
+
+
 
 
