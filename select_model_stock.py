@@ -114,6 +114,16 @@ def add_dimensions(stock):
 stock_primary = add_dimensions(stock_primary)
 stock_secondary = add_dimensions(stock_secondary)
 
+if stock_secondary is not None:
+    cols = [x+'_p' for x in stock_primary.columns[:-2]]
+    cols.append('is_long')
+    cols.append('is_short')
+    stock_primary.columns = cols
+    stock_secondary.columns = [x+'_s' for x in stock_secondary.columns]
+    stock_primary = concat([stock_primary.ix[:,:-2],stock_secondary.ix[:,:-2],stock_primary.ix[:,-2:]], axis=1)
+    
+print stock_primary
+
 # file to backup console prints
 log_file = open(args.out_dir+'/log_'+args.dataset[:-3]+'.txt', 'w')
 
@@ -121,10 +131,10 @@ today_data_all = {}
 lkbk_days_data_all = {}
 
 for i in range(len(training_set)):
-    today = training_set[i]
-    lkbk_days = utils.gen_lkbk_days(today=today)
-    lkbk_days = [datetime.strptime(x,'%Y%m%d') for x in lkbk_days]
-    utils._print(log_file,  'processing %s' % today)
+        today = training_set[i]
+        lkbk_days = utils.gen_lkbk_days(today=today)
+        lkbk_days = [datetime.strptime(x,'%Y%m%d') for x in lkbk_days]
+        utils._print(log_file,  'processing %s' % today)
     try:
         today_time_range = utils.day_time_range(today)
         lkbk_days_range = None
@@ -144,7 +154,7 @@ for i in range(len(training_set)):
 
 cw = select_model.CalculateWeights(today_data_all, lkbk_days_data_all)
 costf = numpredict.createcostfunction(cw, 5, training_set)
-optimization.annealingoptimize([(0.0,1.0)]*22, costf, step=0.01)
+optimization.annealingoptimize([(0.0,1.0)]*(len(stock_primary.columns)-2), costf, step=0.01)
 
 
 
