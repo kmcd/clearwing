@@ -27,7 +27,7 @@ def get_top_dims(data, top_dims, start_date, end_date, top=10):
     idx = top_dims.ix[end_date].index
     dates = date_range(start_date, end_date, freq='Min')
     return data.ix[dates,idx[:top]].dropna()
-    
+        
 class KNN:
     def __init__(self, data, qqq):
         self.data = data
@@ -50,9 +50,18 @@ class KNN:
             return 2
         else:
             return 0
-    
+            
+    def get_dist_np(self, data, vec1):
+        dist = (vec1-data)**2
+        dist = np.sum(dist, axis=1)
+        dist = np.sqrt(dist)
+        dist = [(dist[i],i) for i in range(len(dist))]
+        dist.sort()
+        return dist
+        
     def estimate(self, vec, k=7):
-        dlist = self.getdistances(self.data,vec)
+        #dlist = self.getdistances(self.data,vec)
+        dlist = self.get_dist_np(self.data, vec)
         vals = [0,0,0]
         
         # Take the average of the top k results
@@ -73,7 +82,6 @@ class KNN:
             
             if inpt.index[i].hour == 16:
                 continue
-                
             if inpt.index[i] in self.qqq.index:
                 row = inpt.ix[i,:]
                 
