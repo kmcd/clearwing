@@ -130,9 +130,18 @@ class CalculateWeights:
         
         distancelist.sort()
         return distancelist
-
+        
+    def get_dist_np(self, data, vec1):
+        dist = (vec1-data)**2
+        dist = np.sum(dist, axis=1)
+        dist = np.sqrt(dist)
+        dist = [(dist[i],i) for i in range(len(dist))]
+        dist.sort()
+        return dist
+        
     def estimate(self, vec, trainset, k=7):
-        dlist = self.getdistances(trainset['input'],vec)
+        #dlist = self.getdistances(trainset['input'],vec)
+        dlist = self.get_dist_np(trainset['input'], vec)
         vals = [0,0,0]
         
         # Take the average of the top k results
