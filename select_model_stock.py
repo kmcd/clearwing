@@ -122,8 +122,6 @@ if stock_secondary is not None:
     stock_secondary.columns = [x+'_s' for x in stock_secondary.columns]
     stock_primary = concat([stock_primary.ix[:,:-2],stock_secondary.ix[:,:-2],stock_primary.ix[:,-2:]], axis=1)
     
-print stock_primary
-
 # file to backup console prints
 log_file = open(args.out_dir+'/log_'+args.dataset[:-3]+'.txt', 'w')
 
@@ -131,10 +129,10 @@ today_data_all = {}
 lkbk_days_data_all = {}
 
 for i in range(len(training_set)):
-        today = training_set[i]
-        lkbk_days = utils.gen_lkbk_days(today=today)
-        lkbk_days = [datetime.strptime(x,'%Y%m%d') for x in lkbk_days]
-        utils._print(log_file,  'processing %s' % today)
+    today = training_set[i]
+    lkbk_days = utils.gen_lkbk_days(today=today)
+    lkbk_days = [datetime.strptime(x,'%Y%m%d') for x in lkbk_days]
+    utils._print(log_file,  'processing %s' % today)
     try:
         today_time_range = utils.day_time_range(today)
         lkbk_days_range = None
@@ -152,9 +150,30 @@ for i in range(len(training_set)):
         utils._print(log_file, sys.exc_info())
         utils._print(log_file, "no record found, maybe a holiday")
 
+
 cw = select_model.CalculateWeights(today_data_all, lkbk_days_data_all)
-costf = numpredict.createcostfunction(cw, 5, training_set)
-optimization.annealingoptimize([(0.0,1.0)]*(len(stock_primary.columns)-2), costf, step=0.01)
+costf = numpredict.createcostfunction(cw, args.ndays, training_set)
+if args.annealingoff:
+    error_k = {}
+    for k in args.k_range:
+        errors = cw.crossvalidate(args.ndays, [0.1]*(len(stock_primary.columns)-2), training_set, k)
+        error_mean = np.mean(errors)
+        error_std = np.std(errors)
+        error_k[k] = (error_mean, error_std)
+    utils._print(log_file, 'dataset: %s' % args.dataset)
+    utils._print(log_file, 'k range: %s' % args.k_range)
+    utils._print(log_file, 'iterations: %s' % args.iters)
+    utils._print(log_file, 'days: %s' % args.ndays)
+    for k in args.k_range:
+        utils._print(log_file, '(k=%d) mean = %.2fs, std = %.2fs' % (k, error_k[k][0], error_k[k][1]))
+else:
+    vec = optimization.annealingoptimize([(0.0,1.0)]*(len(stock_primary.columns)-2), costf, step=0.01)
+    utils._print(log_file, 'dataset: %s' % args.dataset)
+    utils._print(log_file, 'k range: %s' % args.k_range)
+    utils._print(log_file, 'iterations: %s' % args.iters)
+    utils._print(log_file, 'days: %s' % args.ndays)
+    utils._print(log_file, vec)
+    
 
 
 

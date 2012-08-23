@@ -67,8 +67,7 @@ class KNN:
         # Take the average of the top k results
         for i in range(k):
             idx = self.data.index[dlist[i][1]]
-            if idx in self.qqq.index:
-                vals[self.qqq_classify(idx)] +=  numpredict.inverseweight(dlist[i][0])
+            vals[self.qqq_classify(idx)] +=  numpredict.inverseweight(dlist[i][0])
                 
         if vals[1] == vals[2]:
             return 0
@@ -185,6 +184,5 @@ class CalculateWeights:
                 errors.append(error_rate)
             except:
                 print sys.exc_info()
-        error_mean = np.mean(errors)
-        return error_mean
+        return errors
         
