@@ -85,12 +85,7 @@ def add_dimensions(stock):
         stock['is_long'] = stock['is_long'].fillna(value=False)
         stock['is_short'] = stock['is_short'].fillna(value=False)
         
-        stock = stock.ix[:,['Open',
-                            'High',
-                            'Low',
-                            'Close',
-                            'Volume',
-                            '% Change(open)',
+        stock = stock.ix[:,['% Change(open)',
                             '% Change(high)',
                             '% Change(low)',
                             '% Change(close)',
@@ -115,11 +110,11 @@ stock_primary = add_dimensions(stock_primary)
 stock_secondary = add_dimensions(stock_secondary)
 
 if stock_secondary is not None:
-    cols = [x+'_p' for x in stock_primary.columns[:-2]]
+    cols = [args.primary+' '+x for x in stock_primary.columns[:-2]]
     cols.append('is_long')
     cols.append('is_short')
     stock_primary.columns = cols
-    stock_secondary.columns = [x+'_s' for x in stock_secondary.columns]
+    stock_secondary.columns = [args.secondary+' '+x for x in stock_secondary.columns]
     stock_primary = concat([stock_primary.ix[:,:-2],stock_secondary.ix[:,:-2],stock_primary.ix[:,-2:]], axis=1)
     
 # file to backup console prints
@@ -168,14 +163,23 @@ if args.annealingoff:
 else:
     days = sample(training_set, args.ndays)
     costf = numpredict.createcostfunction(cw, args.ndays, training_set, days=days)
-    vec = optimization.annealingoptimize([(0.0,1.0)]*(len(stock_primary.columns)-2), costf, step=0.2, iters=args.iters)
+    vec, error_mean, error_std = optimization.annealingoptimize(
+                                                [(0.0,1.0)]*(len(stock_primary.columns)-2),
+                                                costf,
+                                                step=0.2,
+                                                iters=args.iters)
     utils._print(log_file, 'dataset: %s' % args.dataset)
     utils._print(log_file, 'k range: %s' % args.k_range)
     utils._print(log_file, 'iterations: %s' % args.iters)
     utils._print(log_file, 'days: %s' % args.ndays)
-    sort_idx = np.argsort(vec)
+    sort_idx = np.argsort(vec)[::-1]
     vec = [(stock_primary.columns[x],vec[x]) for x in sort_idx]
-    utils._print(log_file, vec)
+    utils._print(log_file, 'scale:')
+    for name, val in vec:
+        name = name.replace('% Change(', '%').replace(')','')
+        utils._print(log_file, '\t%s = %.2f' % (name, val))
+    utils._print(log_file, 'std dev error: %.2f' % error_std)
+    utils._print(log_file, 'avg error: %.2f' % error_mean)
     
 
 

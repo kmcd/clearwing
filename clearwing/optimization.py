@@ -1,6 +1,7 @@
 import time
 import random
 import math
+import numpy as np
 
 people = [('Seymour','BOS'),
           ('Franny','DAL'),
@@ -90,12 +91,21 @@ def randomoptimize(domain,costf):
 def annealingoptimize(domain,costf,step=1,iters=20):
   T = 100000.0
   cool = math.pow(T,-1.0/iters)
-  print cool
+
   # Initialize the values randomly
   vec=[float(random.randint(domain[i][0],domain[i][1]))
        for i in range(len(domain))]
   
+  print '\n\norig'
+  error_list_a =costf(vec)
+  ea = np.mean(error_list_a)
+  
+  iter_count = 0
+    
   while T>0.1:
+    print '\n\niter %d' % iter_count
+    iter_count += 1
+    
     # Choose one of the indices
     i=random.randint(0,len(domain)-1)
 
@@ -109,8 +119,8 @@ def annealingoptimize(domain,costf,step=1,iters=20):
     elif vecb[i]>domain[i][1]: vecb[i]=domain[i][1]
 
     # Calculate the current cost and the new cost
-    ea=costf(vec)
-    eb=costf(vecb)
+    error_list_b=costf(vecb)
+    eb = np.mean(error_list_b)
     p=pow(math.e,(-eb-ea)/T)
 
     print vec,ea
@@ -120,10 +130,12 @@ def annealingoptimize(domain,costf,step=1,iters=20):
     # cutoff?
     if (eb<ea or random.random()<p):
       vec=vecb
+      ea = eb
+      error_list_a = error_list_b
 
     # Decrease the temperature
     T=T*cool
-  return vec
+  return vec, ea, np.std(error_list_a)
 
 def swarmoptimize(domain,costf,popsize=20,lrate=0.1,maxv=2.0,iters=50):
   # Initialize individuals
