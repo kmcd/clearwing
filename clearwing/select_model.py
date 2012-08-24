@@ -67,9 +67,7 @@ class KNN:
             vals[self.qqq_classify(row['index'])] += numpredict.inverseweight(row[0])
         for k in k_range:
             vals = [0,0,0]
-        
             dlist[:k].apply(fun, axis=1, args=[vals])
-                
             if vals[1] == vals[2]:
                 est[k] = 0
             else:
@@ -178,7 +176,6 @@ class CalculateWeights:
             return 0
         return argmax(vals)
 
-        
     def error_score(self, testset, trainset, k=7):
         ncor, count = 0, 0     
         for i in range(  len(testset['input'])  ):
@@ -207,8 +204,65 @@ class CalculateWeights:
                 testset = self.rescale(testset, scale)
                 
                 error_rate = self.error_score(testset, trainset)
-                print '(today = %s) error_rate = %.2f (time = %.2fs)' % (today, error_rate, time.time()-st)
+                print '(today = %s, k = %d) error_rate = %.2f (time = %.2fs)' % (today, k, error_rate, time.time()-st)
                 errors.append(error_rate)
+            except:
+                print sys.exc_info()
+        return errors
+        
+    def estimate_k_range(self, vec, trainset, k_range):
+        dlist = self.get_dist_np(trainset['input'], vec)[:max(k_range)].reset_index()
+        est = {}
+        def fun(row, vals):
+            vals[self.map_classify(trainset['result'].ix[row['index'],:])] += numpredict.inverseweight(row[0])
+        for k in k_range:
+            vals = [0,0,0]
+            dlist[:k].apply(fun, axis=1, args=[vals])
+            if vals[1] == vals[2]:
+                est[k] = 0
+            else:
+                est[k] = argmax(vals)
+        return est
+
+    def error_score_k_range(self, testset, trainset, k_range):
+        ncor = {}
+        count = 0
+        for k in k_range: ncor[k] = 0.0
+        for i in range(  len(testset['input'])  ):
+            row = testset['input'].ix[i,:]
+            act = self.map_classify(testset['result'].ix[i,:])
+            est = self.estimate_k_range(row, trainset, k_range)
+            for k in k_range:
+                if est[k] == act:
+                    ncor[k] = ncor[k] + 1
+            count = count + 1
+                
+        pct = {}
+        for k in k_range:
+            pct[k] = 1 - (float(ncor[k]) / count)
+            pct[k] *= 100.0
+        return pct
+
+    def crossvalidate_k_range(self, ndays, scale, training_set, k_range=None, days=None):
+        errors = {}
+        for k in k_range:
+            errors[k] = []
+        if days is None:
+            days = random.sample(training_set, ndays)
+        for today in days:
+            try:
+                st = time.time()
+                today_data = self.today[today]
+                lkbk_days_data = self.lkbk_days[today]
+                trainset, testset = self.dividedata(today_data, lkbk_days_data)
+                
+                trainset = self.rescale(trainset, scale)
+                testset = self.rescale(testset, scale)
+                
+                error_rate = self.error_score_k_range(testset, trainset, k_range)
+                print '(today = %s, k_range = %s, time = %.2fs)' % (today, k_range, time.time()-st)
+                for k in k_range:
+                    errors[k].append(error_rate[k])
             except:
                 print sys.exc_info()
         return errors

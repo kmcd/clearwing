@@ -148,18 +148,16 @@ for i in range(len(training_set)):
 
 cw = select_model.CalculateWeights(today_data_all, lkbk_days_data_all)
 if args.annealingoff:
-    error_k = {}
-    for k in args.k_range:
-        errors = cw.crossvalidate(args.ndays, [0.1]*(len(stock_primary.columns)-2), training_set, k)
-        error_mean = np.mean(errors)
-        error_std = np.std(errors)
-        error_k[k] = (error_mean, error_std)
+    error_rates = cw.crossvalidate_k_range(args.ndays, [0.1]*(len(stock_primary.columns)-2), training_set, args.k_range)
+    error_rates = DataFrame(error_rates)
+    
+    utils._print(log_file, '\n\n')
     utils._print(log_file, 'dataset: %s' % args.dataset)
     utils._print(log_file, 'k range: %s' % args.k_range)
     utils._print(log_file, 'iterations: %s' % args.iters)
     utils._print(log_file, 'days: %s' % args.ndays)
-    for k in args.k_range:
-        utils._print(log_file, '(k=%d) mean = %.2fs, std = %.2fs' % (k, error_k[k][0], error_k[k][1]))
+    utils._print(log_file, DataFrame(error_rates.std(), columns=['std dev error:']).T)
+    utils._print(log_file, DataFrame(error_rates.mean(), columns=['avg error:']).T)
 else:
     days = sample(training_set, args.ndays)
     costf = numpredict.createcostfunction(cw, args.ndays, training_set, days=days)
