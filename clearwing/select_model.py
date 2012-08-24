@@ -59,6 +59,48 @@ class KNN:
         if vals[1] == vals[2]:
             return 0
         return argmax(vals)
+
+    def estimate_k_range(self, vec, k_range):
+        dlist = self.get_dist_np(self.data, vec)[:max(k_range)].reset_index()
+        est = {}
+        def fun(row, vals):
+            vals[self.qqq_classify(row['index'])] += numpredict.inverseweight(row[0])
+        for k in k_range:
+            vals = [0,0,0]
+        
+            dlist[:k].apply(fun, axis=1, args=[vals])
+                
+            if vals[1] == vals[2]:
+                est[k] = 0
+            else:
+                est[k] = argmax(vals)
+        return est
+        
+    def error_score_k_range(self, inpt, k_range):
+        ncor = {}
+        count = 0
+        for k in k_range:
+            ncor[k] = 0.0
+        st = time.time()       
+        for i in range(  len(inpt)  ):
+            
+            if inpt.index[i].hour == 16:
+                continue
+            if inpt.index[i] in self.qqq.index:
+                row = inpt.ix[i,:]                
+                est = self.estimate_k_range(row, k_range)
+                act = self.qqq_classify(inpt.index[i])
+                for k in k_range:
+                    if est[k] == act:
+                        ncor[k] = ncor[k] + 1
+                count = count + 1
+                
+        pct = {}
+        for k in k_range:
+            pct[k] = 1 - (ncor[k] / count)
+            pct[k] *= 100.0
+        return pct
+            
     
     def error_score(self, inpt, k=7):
         ncor = 0.

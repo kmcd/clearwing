@@ -125,11 +125,11 @@ for j in range(args.iters):
             
             # kNN
             knn = select_model.KNN(train_set, qqq)
+            error = knn.error_score_k_range(test_set, args.k_range)
             for k in args.k_range:
-                st = time.time()
-                error = knn.error_score(test_set, k)
-                error_rates[k].append(error)
-                utils._print(log_file,'(ntop=%d, lkbk=%d, k=%d) error = %.2f%% (time=%.2fs) date = %s' % (ntop, lkbk, k, error, time.time()-st, today) )
+                error_rates[k].append(error[k])
+                
+            utils._print(log_file, error)
         except:
             print sys.exc_info()
 
@@ -141,8 +141,6 @@ utils._print(log_file, 'iterations: %s' % args.iters)
 utils._print(log_file, 'days: %s' % args.ndays)
 utils._print(log_file, DataFrame(error_rates.std(), columns=['std dev error:']).T)
 utils._print(log_file, DataFrame(error_rates.mean(), columns=['avg error:']).T)
-
-
 
 
 
