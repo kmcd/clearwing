@@ -63,9 +63,9 @@ def rescale(data,scale):
         scaleddata.append({'input':scaled,'result':row['result']})
     return scaleddata
 
-def createcostfunction(cw, ndays, training_set, k=7):
+def createcostfunction(cw, ndays, training_set, k=7, days=None):
     def costf(scale):
-        return np.mean(cw.crossvalidate(ndays, scale, training_set, k))
+        return np.cw.crossvalidate(ndays, scale, training_set, k, days))
     return costf
 
 def probguess(data,vec1,low,high,k=5,weightf=gaussian):

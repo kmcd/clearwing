@@ -87,7 +87,10 @@ def randomoptimize(domain,costf):
   return r
 
 
-def annealingoptimize(domain,costf,T=10000.0,cool=0.95,step=1):
+def annealingoptimize(domain,costf,step=1,iters=20):
+  T = 100000.0
+  cool = math.pow(T,-1.0/iters)
+  print cool
   # Initialize the values randomly
   vec=[float(random.randint(domain[i][0],domain[i][1]))
        for i in range(len(domain))]

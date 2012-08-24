@@ -152,7 +152,6 @@ for i in range(len(training_set)):
 
 
 cw = select_model.CalculateWeights(today_data_all, lkbk_days_data_all)
-costf = numpredict.createcostfunction(cw, args.ndays, training_set)
 if args.annealingoff:
     error_k = {}
     for k in args.k_range:
@@ -167,11 +166,15 @@ if args.annealingoff:
     for k in args.k_range:
         utils._print(log_file, '(k=%d) mean = %.2fs, std = %.2fs' % (k, error_k[k][0], error_k[k][1]))
 else:
-    vec = optimization.annealingoptimize([(0.0,1.0)]*(len(stock_primary.columns)-2), costf, step=0.01)
+    days = sample(training_set, args.ndays)
+    costf = numpredict.createcostfunction(cw, args.ndays, training_set, days=days)
+    vec = optimization.annealingoptimize([(0.0,1.0)]*(len(stock_primary.columns)-2), costf, step=0.2, iters=args.iters)
     utils._print(log_file, 'dataset: %s' % args.dataset)
     utils._print(log_file, 'k range: %s' % args.k_range)
     utils._print(log_file, 'iterations: %s' % args.iters)
     utils._print(log_file, 'days: %s' % args.ndays)
+    sort_idx = np.argsort(vec)
+    vec = [(stock_primary.columns[x],vec[x]) for x in sort_idx]
     utils._print(log_file, vec)
     
 

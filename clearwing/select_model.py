@@ -121,21 +121,17 @@ class CalculateWeights:
         dist = (vec1-data)**2
         dist = np.sum(dist, axis=1)
         dist = np.sqrt(dist)
-        dist = [(dist[i],i) for i in range(len(dist))]
         dist.sort()
         return dist
         
     def estimate(self, vec, trainset, k=7):
-        #dlist = self.getdistances(trainset['input'],vec)
-        dlist = self.get_dist_np(trainset['input'], vec)
+        dlist = self.get_dist_np(trainset['input'], vec)[:k].reset_index()
         vals = [0,0,0]
         
-        # Take the average of the top k results
-        for i in range(k):
-            idx = trainset['input'].index[dlist[i][1]]
-            cls = self.map_classify(trainset['result'].ix[idx,:])
-            vals[cls] +=  numpredict.inverseweight(dlist[i][0])
-                
+        def fun(row):
+            vals[self.map_classify(trainset['result'].ix[row['index'],:])] += numpredict.inverseweight(row[0])
+        dlist.apply(fun, axis=1)
+
         if vals[1] == vals[2]:
             return 0
         return argmax(vals)
@@ -154,9 +150,11 @@ class CalculateWeights:
         pct = 1 - (float(ncor) / count)
         return pct * 100.0
             
-    def crossvalidate(self, ndays, scale, training_set, k=7):
+    def crossvalidate(self, ndays, scale, training_set, k=7, days=None):
         errors = []
-        for today in random.sample(training_set, ndays):
+        if days is None:
+            days = random.sample(training_set, ndays)
+        for today in days:
             try:
                 st = time.time()
                 today_data = self.today[today]
