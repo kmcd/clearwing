@@ -99,7 +99,6 @@ for j in range(args.iters):
     print 'iter %d' % (j+1)
     for today in sample(training_set, args.ndays):
         try:
-            today = training_set[i]
             today_data = today_data_all[today].ix[:10,:,:]
             lkbk_days_data = lkbk_days_data_all[today].ix[today_data.items,:,:]
             

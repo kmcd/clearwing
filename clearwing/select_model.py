@@ -33,16 +33,6 @@ class KNN:
         self.data = data
         self.qqq = qqq
         
-    def getdistances(self, data, vec1):
-        distancelist = []
-        
-        for i in range(len(data)):
-            vec2 = data.ix[i,:]
-            distancelist.append((distance.euclidean(vec1, vec2),i))
-        
-        distancelist.sort()
-        return distancelist
-        
     def qqq_classify(self, idx):
         if self.qqq.ix[idx, 'is_long']:
             return 1
@@ -55,19 +45,16 @@ class KNN:
         dist = (vec1-data)**2
         dist = np.sum(dist, axis=1)
         dist = np.sqrt(dist)
-        dist = [(dist[i],i) for i in range(len(dist))]
         dist.sort()
         return dist
         
     def estimate(self, vec, k=7):
-        #dlist = self.getdistances(self.data,vec)
-        dlist = self.get_dist_np(self.data, vec)
+        dlist = self.get_dist_np(self.data, vec)[:k].reset_index()
         vals = [0,0,0]
         
-        # Take the average of the top k results
-        for i in range(k):
-            idx = self.data.index[dlist[i][1]]
-            vals[self.qqq_classify(idx)] +=  numpredict.inverseweight(dlist[i][0])
+        def fun(row):
+            vals[self.qqq_classify(row['index'])] += numpredict.inverseweight(row[0])
+        dlist.apply(fun, axis=1)
                 
         if vals[1] == vals[2]:
             return 0
