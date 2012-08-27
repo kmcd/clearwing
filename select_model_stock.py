@@ -21,6 +21,7 @@ parser.add_argument('-r','--range', type=int, default=[-0.03,0.03], nargs=2, hel
 parser.add_argument('--annealingoff', type=bool, const=True, 
                                 default=False, nargs='?', help='switch to turn off annealing')
 
+parser.add_argument('-ss','--stepsize', type=float, default=0.1, help='number of lookback days')
 parser.add_argument('-i','--input', dest='in_dir', default='data/training', help='directory to retrieve dataset from')
 parser.add_argument('-o','--output', dest='out_dir', default='data/training', help='directory to store text reports')
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
@@ -42,6 +43,7 @@ f = open(args.in_dir+'/datelist_'+args.dataset[:-3]+'.txt')
 training_set_str = [line[:-1] for line in f]
 training_set = [datetime.strptime(x, '%Y%m%d').replace(hour=9, minute=30) for x in training_set_str]
 
+# get slice of stocks to be used
 stock_primary = qqq if args.primary.lower() == 'qqq' else nasdaq_comp[args.primary.lower()]
 stock_secondary = None
 if args.secondary is not None:
@@ -49,7 +51,6 @@ if args.secondary is not None:
 
 def add_dimensions(stock):
     if stock is not None:
-        del stock['% Change(close)']
         stock['% Change(open)'] = stock['Open'].pct_change().fillna(0)
         stock['% Change(high)'] = stock['High'].pct_change().fillna(0)
         stock['% Change(low)'] = stock['Low'].pct_change().fillna(0)
@@ -110,6 +111,7 @@ stock_primary = add_dimensions(stock_primary)
 stock_secondary = add_dimensions(stock_secondary)
 
 if stock_secondary is not None:
+    # append dimensions of secondary stock to the primary stock, not including the long and short classifiers' columns
     cols = [args.primary+' '+x for x in stock_primary.columns[:-2]]
     cols.append('is_long')
     cols.append('is_short')
@@ -129,6 +131,7 @@ for i in range(len(training_set)):
     lkbk_days = [datetime.strptime(x,'%Y%m%d') for x in lkbk_days]
     utils._print(log_file,  'processing %s' % today)
     try:
+        # generate date/time ranges for 'today'
         today_time_range = utils.day_time_range(today)
         lkbk_days_range = None
         for lkbk_day in lkbk_days:
@@ -138,6 +141,7 @@ for i in range(len(training_set)):
             else:
                 lkbk_days_range = lkbk_days_range.append(mins)
                     
+        # get slice of data for 'today'
         today_data_all[today] = stock_primary.ix[today_time_range,:]
         lkbk_days_data_all[today] = stock_primary.ix[lkbk_days_range,:]
                                     
@@ -146,6 +150,7 @@ for i in range(len(training_set)):
         utils._print(log_file, "no record found, maybe a holiday")
 
 
+# CalculateWeights
 cw = select_model.CalculateWeights(today_data_all, lkbk_days_data_all)
 if args.annealingoff:
     error_rates_df = DataFrame()
@@ -166,7 +171,7 @@ else:
     vec, error_mean, error_std = optimization.annealingoptimize(
                                                 [(0.0,1.0)]*(len(stock_primary.columns)-2),
                                                 costf,
-                                                step=0.2,
+                                                step=args.stepsize,
                                                 iters=args.iters)
     utils._print(log_file, 'dataset: %s' % args.dataset)
     utils._print(log_file, 'k range: %s' % args.k_range)
