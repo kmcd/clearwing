@@ -2,8 +2,6 @@
 for usage, see:
     python prepare_data.py -h
 """
-# Get data by date
-# Pick a day at random from data set
 from random import sample
 from datetime import datetime, date, timedelta
 from clearwing import extract_data, select_model, utils
@@ -32,8 +30,8 @@ args = parser.parse_args()
 set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
 
 # Generate series of business days from earliest date to latest date
-qqq_start = args.start_day or datetime(1999,3,10)
-qqq_end = args.end_day or datetime(2012,7,19)
+qqq_start = args.start_day
+qqq_end = args.end_day
 if not args.is_random:
     qqq_end = qqq_end - 60 * datetools.BDay()
 trading_days = date_range(qqq_start, qqq_end, freq='B')
@@ -122,14 +120,16 @@ def save_data_of_set(_set, _store):
                 print sys.exc_info()
                 print 'error in %s' % nasdaq_100_file
                 
+    # concatenate all the nasdaq components into one Panel object
     nasdaq_comp = {}
     for k, v in components.items():
         nasdaq_comp[k] = concat(v).fillna(method='pad').fillna(method='bfill')
     nasdaq_comp = Panel(nasdaq_comp)
-
     print '\n\n>>> Nasdaq comp'
     print nasdaq_comp
 
+    # concatenate all qqq_components into one DataFrame object
+    # append long and short classifiers
     qqq = concat(qqq_components)
     qqq_long = {}
     qqq_short = {}
@@ -154,17 +154,15 @@ def save_data_of_set(_set, _store):
     vol_mat = nasdaq_comp.ix[:,:,'Volume']
     liq_mat = close_price_mat * vol_mat / 1000000 # liquidity in millions
     liq_mat = liq_mat.fillna(value=0)
-    #print '\n\n>>> Nasdaq Liquidity in millions'
-    #for i in range(0,len(liq_mat.columns),10):
-    #    print liq_mat.ix[:5,i:i+10]
 
+    # save everything into h5 format
     utils.save_object(_store, nasdaq_comp, 'nasdaq_comp')
     utils.save_object(_store, qqq, 'qqq')
     utils.save_object(_store, vol_mat, 'vol_mat')
     utils.save_object(_store, liq_mat, 'liq_mat')
     print _store
 
-                
+
 save_data_of_set(train_set_str, train_store)
 save_data_of_set(validate_set_str, validate_store)
 save_data_of_set(test_set_str, test_store)

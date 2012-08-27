@@ -49,18 +49,26 @@ class KNN:
         return dist
         
     def estimate(self, vec, k=7):
+        """
+        gives an estimate of vec using kNN algorithm for the given k
+        uses inverseweight as weights
+        """
         dlist = self.get_dist_np(self.data, vec)[:k].reset_index()
         vals = [0,0,0]
         
-        def fun(row):
+        def weighted_classify(row):
             vals[self.qqq_classify(row['index'])] += numpredict.inverseweight(row[0])
-        dlist.apply(fun, axis=1)
+        dlist.apply(weighted_classify, axis=1)
                 
         if vals[1] == vals[2]:
             return 0
         return argmax(vals)
 
     def estimate_k_range(self, vec, k_range):
+        """
+        gives an estimate of vec using kNN algorithm for the given k_range
+        uses inverseweight as weights
+        """
         dlist = self.get_dist_np(self.data, vec)[:max(k_range)].reset_index()
         est = {}
         def fun(row, vals):
@@ -75,6 +83,9 @@ class KNN:
         return est
         
     def error_score_k_range(self, inpt, k_range):
+        """
+        gives the %error for the estimates of the given set of vectors
+        """
         ncor = {}
         count = 0
         for k in k_range:
@@ -101,6 +112,9 @@ class KNN:
             
     
     def error_score(self, inpt, k=7):
+        """
+        gives the %error for the estimates of the given set of vectors
+        """
         ncor = 0.
         count = 0
         st = time.time()       
@@ -148,6 +162,10 @@ class CalculateWeights:
             return 0
             
     def getdistances(self, data, vec1):
+        """
+        get the euclidean distance of vec1 from all vectors of data
+        sort by ascending order
+        """
         distancelist = []
         
         for i in range(len(data)):
@@ -158,6 +176,10 @@ class CalculateWeights:
         return distancelist
         
     def get_dist_np(self, data, vec1):
+        """
+        get the euclidean distance of vec1 from all vectors of data using numpy
+        sort by ascending order
+        """
         dist = (vec1-data)**2
         dist = np.sum(dist, axis=1)
         dist = np.sqrt(dist)
@@ -168,9 +190,9 @@ class CalculateWeights:
         dlist = self.get_dist_np(trainset['input'], vec)[:k].reset_index()
         vals = [0,0,0]
         
-        def fun(row):
+        def weighted_classify(row):
             vals[self.map_classify(trainset['result'].ix[row['index'],:])] += numpredict.inverseweight(row[0])
-        dlist.apply(fun, axis=1)
+        dlist.apply(weighted_classify, axis=1)
 
         if vals[1] == vals[2]:
             return 0

@@ -64,6 +64,7 @@ for i in range(len(training_set)):
         
         multiplier[today] = liqs[topn_nasdaq]
         
+        # Consolidate today data into one Panel object
         pct_close = nasdaq_comp.ix[topn_nasdaq, today_time_range, '% Change(close)']
         pct_close = pct_close * multiplier[today]
         pct_liq_min = liq_mat.ix[today_time_range, topn_nasdaq].pct_change().fillna(0)
@@ -72,6 +73,7 @@ for i in range(len(training_set)):
                                 '% Change(close)':pct_close,
                                 '% Change(liquidity)':pct_liq_min,}).transpose(2,0,1)
                                 
+        # generate DateTimeIndex for lkbk_days (9:30 to 16:00 for 3 days)
         lkbk_days_range = None
         for lkbk_day in lkbk_days:
             mins = utils.day_time_range(lkbk_day)
@@ -80,6 +82,7 @@ for i in range(len(training_set)):
             else:
                 lkbk_days_range = lkbk_days_range.append(mins)
                 
+        # Consolidate lkbk_days data into one Panel object
         pct_close = nasdaq_comp.ix[topn_nasdaq, lkbk_days_range, '% Change(close)']
         pct_close = pct_close * multiplier[today]
         pct_liq_min = liq_mat.ix[lkbk_days_range, topn_nasdaq].pct_change().fillna(0)
@@ -99,6 +102,7 @@ for j in range(args.iters):
     print 'iter %d' % (j+1)
     for today in sample(training_set, args.ndays):
         try:
+            # get slice of data for 'today'
             today_data = today_data_all[today].ix[:10,:,:]
             lkbk_days_data = lkbk_days_data_all[today].ix[today_data.items,:,:]
             
