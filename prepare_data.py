@@ -31,8 +31,7 @@ set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
 # Generate series of business days from earliest date to latest date
 qqq_start = args.start_day
 qqq_end = args.end_day
-#if not args.is_random:
-#    qqq_end = qqq_end - 60 * datetools.BDay()
+
 trading_days = date_range(qqq_start, qqq_end, freq='B')
 
 if args.is_random:
