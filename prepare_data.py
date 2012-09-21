@@ -25,15 +25,14 @@ parser.add_argument('-ed','--eday', dest='end_day', help='qqq end date to use', 
 parser.add_argument('-cd','--cday', dest='chosen_day', help='chosen start date')
 parser.add_argument('-nd','--ndays', type=int, default=60, help='number of random days to generate')
 args = parser.parse_args()
-
 # for debugging/printing purposes
 set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
 
 # Generate series of business days from earliest date to latest date
 qqq_start = args.start_day
 qqq_end = args.end_day
-if not args.is_random:
-    qqq_end = qqq_end - 60 * datetools.BDay()
+#if not args.is_random:
+#    qqq_end = qqq_end - 60 * datetools.BDay()
 trading_days = date_range(qqq_start, qqq_end, freq='B')
 
 if args.is_random:
@@ -74,14 +73,13 @@ else:
     if args.chosen_day is not None:
         start_day = datetime.strptime(args.chosen_day, '%Y%m%d')
     training_set = date_range(start_day, periods=args.ndays, freq='B')
-    training_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
+    train_set_str = [date.date().strftime('%Y%m%d') for date in training_set]
 
     # h5 savefile
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
-    store = utils.create_hdf5(args.out_dir+'/'+start_day.strftime('%Y%m%d'))
-
-
+    train_store = utils.create_hdf5(args.out_dir+'/'+start_day.strftime('%Y%m%d'))
+    
 def save_data_of_set(_set, _store):
     components = {}
     qqq_components = []
@@ -161,9 +159,10 @@ def save_data_of_set(_set, _store):
     utils.save_object(_store, vol_mat, 'vol_mat')
     utils.save_object(_store, liq_mat, 'liq_mat')
     print _store
-
-
-save_data_of_set(train_set_str, train_store)
-save_data_of_set(validate_set_str, validate_store)
-save_data_of_set(test_set_str, test_store)
-
+    
+if args.is_random:
+    save_data_of_set(train_set_str, train_store)
+    save_data_of_set(validate_set_str, validate_store)
+    save_data_of_set(test_set_str, test_store)
+else:
+    save_data_of_set(train_set_str, train_store)
