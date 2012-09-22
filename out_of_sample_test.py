@@ -1,6 +1,6 @@
 """
 use prepare_data.py to gather data for 60 consecutive days starting at a 
-random date
+random date. Use input, target, start date, end date and -c parameters.
 
 usage:
 python out_of_sample_test.py <date> <lkbk> <ntop> <k>
@@ -12,13 +12,22 @@ from clearwing import select_model, utils
 from datetime import datetime
 from pandas import *
 import sys, time
+import argparse
 
-lkbk = 3 if not len(sys.argv) > 2 else sys.argv[2]
-ntop = 10 if not len(sys.argv) > 3 else sys.argv[3]
-k = 7 if not len(sys.argv) > 4 else sys.argv[4]
+parser = argparse.ArgumentParser()
+parser.add_argument('-sd','--startday', dest='start_day', help='is the start_day string from prepare_data.py with format YYYYMMDD')
+parser.add_argument('-i','--input', dest='in_dir', default='data/training', help='input directory where data for 60 consecutive days was prepared')
+parser.add_argument('-k', type=int, default=7, help='k value')
+parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
+parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top nasdaq components to use')
+args = parser.parse_args()
 
-dir_name = 'data/training'
-start_day_str = sys.argv[1]
+lkbk = args.lkbk
+ntop = args.ntop
+k = args.k
+
+dir_name = args.in_dir
+start_day_str = args.start_day
 store = HDFStore(dir_name+'/'+start_day_str+'.h5')
 
 nasdaq_comp = store['nasdaq_comp']
