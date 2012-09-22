@@ -17,7 +17,7 @@ parser.add_argument('-t','--target', dest='target_dir', default='qqq_dir', help=
 parser.add_argument('-o','--output', dest='out_dir', default='data/training', help='directory to store text reports')
 parser.add_argument('-r','--range', type=float, default=[-0.03,0.03], nargs=2, help='long/short boundaries')
 parser.add_argument('-c','--consecutive', dest='is_random', type=bool, const=False, 
-                                default=True, nargs='?', help='generate random days or consecutive days')
+                                default=True, nargs='?', help='generate random (ommit -c option) days or consecutive days (use -c option)')
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
 parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top nasdaq components to use')
 parser.add_argument('-sd','--sday', dest='start_day', help='qqq start date to use', required=True)
