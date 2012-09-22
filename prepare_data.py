@@ -12,16 +12,16 @@ import argparse
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('-i','--input', dest='in_dir', default='nasdaq_100', help='input directory')
-parser.add_argument('-t','--target', dest='target_dir', default='qqq_dir', help='target directory')
+parser.add_argument('-i','--input', dest='in_dir', help='input directory where is traiding stock data that you want to analyze')
+parser.add_argument('-t','--target', dest='target_dir', help='target directory where composite index data is')
 parser.add_argument('-o','--output', dest='out_dir', default='data/training', help='directory to store text reports')
 parser.add_argument('-r','--range', type=float, default=[-0.03,0.03], nargs=2, help='long/short boundaries')
 parser.add_argument('-c','--consecutive', dest='is_random', type=bool, const=False, 
                                 default=True, nargs='?', help='generate random (ommit -c option) days or consecutive days (use -c option)')
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
-parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top nasdaq components to use')
-parser.add_argument('-sd','--sday', dest='start_day', help='qqq start date to use', required=True)
-parser.add_argument('-ed','--eday', dest='end_day', help='qqq end date to use', required=True)
+parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top composite index components to use')
+parser.add_argument('-sd','--sday', dest='start_day', help='composite index start date to use', required=True)
+parser.add_argument('-ed','--eday', dest='end_day', help='composite index end date to use', required=True)
 parser.add_argument('-cd','--cday', dest='chosen_day', help='chosen start date')
 parser.add_argument('-nd','--ndays', type=int, default=60, help='number of random days to generate')
 args = parser.parse_args()
