@@ -20,7 +20,8 @@ parser.add_argument('-s','--secondary', help='secondary stock (optional)')
 parser.add_argument('-r','--range', type=int, default=[-0.03,0.03], nargs=2, help='long/short boundaries')
 parser.add_argument('--annealingoff', type=bool, const=True, 
                                 default=False, nargs='?', help='switch to turn off annealing')
-
+parser.add_argument('-cin','--inputCompositeIndexName', dest='input_composite_index_name', required=True, help='this is input component index name')
+parser.add_argument('-cta','--targetCompositeIndexName', dest='target_composite_index_name', required=True, help='this is target component index name')
 parser.add_argument('-ss','--stepsize', type=float, default=0.1, help='number of lookback days')
 parser.add_argument('-i','--input', dest='in_dir', default='data/training', help='directory to retrieve dataset from')
 parser.add_argument('-o','--output', dest='out_dir', default='data/training', help='directory to store text reports')
@@ -31,10 +32,13 @@ args = parser.parse_args()
 lkbk = args.lkbk
 ntop = args.ntop
 
+inputComponentIndexName = args.input_composite_index_name.lower()
+targetComponentIndexName = args.target_composite_index_name.lower()
+
 # open .h5, fetch stored values from prepare_data
 store = HDFStore(args.in_dir+'/'+args.dataset)
-nasdaq_comp = store['nasdaq_comp']
-qqq = store['qqq']
+input_comp = store[ inputComponentIndexName ]
+target = store[ targetComponentIndexName ]
 vol_mat = store['vol_mat']
 liq_mat = store['liq_mat']
 
@@ -44,10 +48,10 @@ training_set_str = [line[:-1] for line in f]
 training_set = [datetime.strptime(x, '%Y%m%d').replace(hour=9, minute=30) for x in training_set_str]
 
 # get slice of stocks to be used
-stock_primary = qqq if args.primary.lower() == 'qqq' else nasdaq_comp[args.primary.lower()]
+stock_primary = target if args.primary.lower() == targetComponentIndexName else input_comp[args.primary.lower()]
 stock_secondary = None
 if args.secondary is not None:
-    stock_secondary = qqq if args.secondary.lower() == 'qqq' else nasdaq_comp[args.secondary.lower()]
+    stock_secondary = target if args.secondary.lower() == targetComponentIndexName else input_comp[args.secondary.lower()]
 
 def add_dimensions(stock):
     if stock is not None:
