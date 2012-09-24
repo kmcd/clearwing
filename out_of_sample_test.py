@@ -20,18 +20,23 @@ parser.add_argument('-i','--input', dest='in_dir', default='data/training', help
 parser.add_argument('-k', type=int, default=7, help='k value')
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
 parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top nasdaq components to use')
+parser.add_argument('-cin','--inputCompositeIndexName', dest='input_composite_index_name', required=True, help='this is input component index name')
+parser.add_argument('-cta','--targetCompositeIndexName', dest='target_composite_index_name', required=True, help='this is target component index name')
 args = parser.parse_args()
 
 lkbk = args.lkbk
 ntop = args.ntop
 k = args.k
 
+inputComponentIndexName = args.input_composite_index_name.lower()
+targetComponentIndexName = args.target_composite_index_name.lower()
+
 dir_name = args.in_dir
 start_day_str = args.start_day
 store = HDFStore(dir_name+'/'+start_day_str+'.h5')
 
-nasdaq_comp = store['nasdaq_comp']
-qqq = store['qqq']
+nasdaq_comp = store[ inputComponentIndexName ]
+qqq = store[ targetComponentIndexName ]
 vol_mat = store['vol_mat']
 liq_mat = store['liq_mat']
 
@@ -128,7 +133,7 @@ for i in range(lkbk, 60, lkbk+1):
         
         utils._print(f, '\n\n>>>>>>>>>>> set %d' % (i+1) )
         utils._print(f, 'today = %s' % today )
-        utils._print(f, 'top10 nasdaq components : %s' % today_data.items )
+        utils._print(f, 'top10 '+ inputComponentIndexName +' components : %s' % today_data.items )
 
         close_name = '% Change(close)'
         liq_name = '% Change(liquidity)'
