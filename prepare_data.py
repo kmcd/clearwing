@@ -12,16 +12,18 @@ import argparse
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('-i','--input', dest='in_dir', default='nasdaq_100', help='input directory')
-parser.add_argument('-t','--target', dest='target_dir', default='qqq_dir', help='target directory')
+parser.add_argument('-i','--input', dest='in_dir', help='input directory where is traiding stock data that you want to analyze')
+parser.add_argument('-t','--target', dest='target_dir', help='target directory where composite index data is')
+parser.add_argument('-cin','--inputCompositeIndexName', dest='input_composite_index_name', required=True, help='this is input component index name')
+parser.add_argument('-cta','--targetCompositeIndexName', dest='target_composite_index_name', required=True, help='this is target component index name')
 parser.add_argument('-o','--output', dest='out_dir', default='data/training', help='directory to store text reports')
 parser.add_argument('-r','--range', type=float, default=[-0.03,0.03], nargs=2, help='long/short boundaries')
 parser.add_argument('-c','--consecutive', dest='is_random', type=bool, const=False, 
                                 default=True, nargs='?', help='generate random (ommit -c option) days or consecutive days (use -c option)')
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
-parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top nasdaq components to use')
-parser.add_argument('-sd','--sday', dest='start_day', help='qqq start date to use', required=True)
-parser.add_argument('-ed','--eday', dest='end_day', help='qqq end date to use', required=True)
+parser.add_argument('-nt','--ntop', type=int, default=10, help='number of top composite index components to use')
+parser.add_argument('-sd','--sday', dest='start_day', help='composite index start date to use', required=True)
+parser.add_argument('-ed','--eday', dest='end_day', help='composite index end date to use', required=True)
 parser.add_argument('-cd','--cday', dest='chosen_day', help='chosen start date')
 parser.add_argument('-nd','--ndays', type=int, default=60, help='number of random days to generate')
 args = parser.parse_args()
@@ -29,10 +31,13 @@ args = parser.parse_args()
 set_printoptions(max_rows=100, max_columns=200, max_colwidth=10000)
 
 # Generate series of business days from earliest date to latest date
-qqq_start = args.start_day
-qqq_end = args.end_day
+compIndexStartDay = args.start_day
+compIndexEndDay = args.end_day
 
-trading_days = date_range(qqq_start, qqq_end, freq='B')
+inputComponentIndexName = args.input_composite_index_name.lower()
+targetComponentIndexName = args.target_composite_index_name.lower()
+
+trading_days = date_range(compIndexStartDay, compIndexEndDay, freq='B')
 
 if args.is_random:
     # sample ndays from given date range
@@ -81,7 +86,7 @@ else:
     
 def save_data_of_set(_set, _store):
     components = {}
-    qqq_components = []
+    targetCompositeIndexComponents = []
     day_count = 0
     for date in _set:
         day_count = day_count + 1
@@ -92,11 +97,11 @@ def save_data_of_set(_set, _store):
         end_of_day = datetime.strptime(date,'%Y%m%d').replace(hour=16)
         idx = date_range(start_of_day, end_of_day, freq='Min')
         
-        # Collect nasdaq components of the given date
-        for nasdaq_100_file in glob.glob(os.path.join('data',args.in_dir,'allstocks_'+date,'*')):
-            name = nasdaq_100_file.rpartition('_')[2][:-4]
+        # Collect input component index components of the given date
+        for inputCompositeIndexComponentsFile in glob.glob(os.path.join('data',args.in_dir,'allstocks_'+date,'*')):
+            name = inputCompositeIndexComponentsFile.rpartition('_')[2][:-4]
             try:
-                df = extract_data.start(nasdaq_100_file, date, idx)
+                df = extract_data.start(inputCompositeIndexComponentsFile, date, idx)
                 if len(df.index) == 0:  # discard empty set
                     print 'set is empty'
                 else:
@@ -106,55 +111,55 @@ def save_data_of_set(_set, _store):
                         components[name].append(df)
             except:
                 print sys.exc_info()
-                print 'error in %s' % nasdaq_100_file
+                print 'error in %s' % inputCompositeIndexComponentsFile
                 
-        # Collect QQQ of the given date
-        for qqq_file in glob.glob(os.path.join('data',args.target_dir,'allstocks_'+date,'table_qqq.csv')):
+        # Collect output component index data of the given date
+        for targetCompositeIndexFile in glob.glob(os.path.join('data',args.target_dir,'allstocks_'+date,'table_'+targetComponentIndexName+'.csv')):
             try:
-                df = extract_data.start(qqq_file, date, idx)
-                qqq_components.append(df)
+                df = extract_data.start(targetCompositeIndexFile, date, idx)
+                targetCompositeIndexComponents.append(df)
             except:
                 print sys.exc_info()
-                print 'error in %s' % nasdaq_100_file
+                print 'error in %s' % inputCompositeIndexComponentsFile
                 
-    # concatenate all the nasdaq components into one Panel object
-    nasdaq_comp = {}
+    # concatenate all the input index composite index components into one Panel object
+    inputCompositeIndexComponents = {}
     for k, v in components.items():
-        nasdaq_comp[k] = concat(v).fillna(method='pad').fillna(method='bfill')
-    nasdaq_comp = Panel(nasdaq_comp)
-    print '\n\n>>> Nasdaq comp'
-    print nasdaq_comp
+        inputCompositeIndexComponents[k] = concat(v).fillna(method='pad').fillna(method='bfill')
+    inputCompositeIndexComponents = Panel(inputCompositeIndexComponents)
+    print '\n\n>>> '+inputComponentIndexName+' comp'
+    print inputCompositeIndexComponents
 
-    # concatenate all qqq_components into one DataFrame object
+    # concatenate all targetCompositeIndexComponents into one DataFrame object
     # append long and short classifiers
-    qqq = concat(qqq_components)
-    qqq_long = {}
-    qqq_short = {}
-    for i in range(len(qqq)):
-        t = qqq.index[i]
+    targetCompositeIndex = concat(targetCompositeIndexComponents)
+    targetCompositeIndex_long = {}
+    targetCompositeIndex_short = {}
+    for i in range(len(targetCompositeIndex)):
+        t = targetCompositeIndex.index[i]
         if t.hour == 16:
             continue
-        qqq_long[t] = select_model.is_long(qqq, t, args.range)
-        qqq_short[t] = select_model.is_short(qqq, t, args.range)
-    qqq['is_long'] = Series(qqq_long)
-    qqq['is_short'] = Series(qqq_short)
-    qqq['is_long'] = qqq['is_long'].fillna(value=False)
-    qqq['is_short'] = qqq['is_short'].fillna(value=False)
+        targetCompositeIndex_long[t] = select_model.is_long(targetCompositeIndex, t, args.range)
+        targetCompositeIndex_short[t] = select_model.is_short(targetCompositeIndex, t, args.range)
+    targetCompositeIndex['is_long'] = Series(targetCompositeIndex_long)
+    targetCompositeIndex['is_short'] = Series(targetCompositeIndex_short)
+    targetCompositeIndex['is_long'] = targetCompositeIndex['is_long'].fillna(value=False)
+    targetCompositeIndex['is_short'] = targetCompositeIndex['is_short'].fillna(value=False)
 
-    print '\n\n>>> QQQ'
-    print qqq.head()
-    print qqq.tail()
+    print '\n\n>>> '+targetComponentIndexName
+    print targetCompositeIndex.head()
+    print targetCompositeIndex.tail()
 
     # compute for liquidity (Volume * Close)
     # converted to per million units for printing
-    close_price_mat = nasdaq_comp.ix[:,:,'Close']
-    vol_mat = nasdaq_comp.ix[:,:,'Volume']
+    close_price_mat = inputCompositeIndexComponents.ix[:,:,'Close']
+    vol_mat = inputCompositeIndexComponents.ix[:,:,'Volume']
     liq_mat = close_price_mat * vol_mat / 1000000 # liquidity in millions
     liq_mat = liq_mat.fillna(value=0)
 
     # save everything into h5 format
-    utils.save_object(_store, nasdaq_comp, 'nasdaq_comp')
-    utils.save_object(_store, qqq, 'qqq')
+    utils.save_object(_store, inputCompositeIndexComponents, inputComponentIndexName)
+    utils.save_object(_store, targetCompositeIndex, targetComponentIndexName)
     utils.save_object(_store, vol_mat, 'vol_mat')
     utils.save_object(_store, liq_mat, 'liq_mat')
     print _store

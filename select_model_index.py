@@ -15,7 +15,8 @@ parser.add_argument('dataset', help='the dataset to use')
 parser.add_argument('-k', dest='k_range', type=int, nargs='*', default=[5,6,7,8,9], help='k values')
 parser.add_argument('-nd','--ndays', type=int, default=20, help='number of random days to be selected')
 parser.add_argument('-it','--iters', type=int, default=4, help='number of iterations')
-
+parser.add_argument('-cin','--inputCompositeIndexName', dest='input_composite_index_name', required=True, help='this is input component index name')
+parser.add_argument('-cta','--targetCompositeIndexName', dest='target_composite_index_name', required=True, help='this is target component index name')
 parser.add_argument('-i','--input', dest='in_dir', default='data/training', help='directory to retrieve dataset from')
 parser.add_argument('-o','--output', dest='out_dir', default='data/training', help='directory to store text reports')
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
@@ -25,10 +26,13 @@ args = parser.parse_args()
 lkbk = args.lkbk
 ntop = args.ntop
 
+inputComponentIndexName = args.input_composite_index_name.lower()
+targetComponentIndexName = args.target_composite_index_name.lower()
+
 # open .h5, fetch stored values from prepare_data
 store = HDFStore(args.in_dir+'/'+args.dataset)
-nasdaq_comp = store['nasdaq_comp']
-qqq = store['qqq']
+input_comp = store[ inputComponentIndexName ]
+target = store[ targetComponentIndexName ]
 vol_mat = store['vol_mat']
 liq_mat = store['liq_mat']
 
@@ -52,22 +56,22 @@ for i in range(len(training_set)):
     try:
         today_time_range = utils.day_time_range(today)
             
-        vols = nasdaq_comp.ix[:, today, 'Volume']
-        closes = nasdaq_comp.ix[:, today, 'Close']
+        vols = input_comp.ix[:, today, 'Volume']
+        closes = input_comp.ix[:, today, 'Close']
         liqs = vols * closes
         liqs = liqs / liqs.sum()
         liqs = liqs.fillna(0)
         
-        # get top nasdaq components by liquidity
+        # get top input components by liquidity
         liqs = liqs[np.argsort(liqs)[::-1]]
-        topn_nasdaq = liqs.index[:]
+        topn_input = liqs.index[:]
         
-        multiplier[today] = liqs[topn_nasdaq]
+        multiplier[today] = liqs[topn_input]
         
         # Consolidate today data into one Panel object
-        pct_close = nasdaq_comp.ix[topn_nasdaq, today_time_range, '% Change(close)']
+        pct_close = input_comp.ix[topn_input, today_time_range, '% Change(close)']
         pct_close = pct_close * multiplier[today]
-        pct_liq_min = liq_mat.ix[today_time_range, topn_nasdaq].pct_change().fillna(0)
+        pct_liq_min = liq_mat.ix[today_time_range, topn_input].pct_change().fillna(0)
         pct_liq_min = pct_liq_min * multiplier[today]
         today_data_all[today] = Panel({
                                 '% Change(close)':pct_close,
@@ -83,9 +87,9 @@ for i in range(len(training_set)):
                 lkbk_days_range = lkbk_days_range.append(mins)
                 
         # Consolidate lkbk_days data into one Panel object
-        pct_close = nasdaq_comp.ix[topn_nasdaq, lkbk_days_range, '% Change(close)']
+        pct_close = input_comp.ix[topn_input, lkbk_days_range, '% Change(close)']
         pct_close = pct_close * multiplier[today]
-        pct_liq_min = liq_mat.ix[lkbk_days_range, topn_nasdaq].pct_change().fillna(0)
+        pct_liq_min = liq_mat.ix[lkbk_days_range, topn_input].pct_change().fillna(0)
         pct_liq_min = pct_liq_min * multiplier[today]
         lkbk_days_data_all[today] = Panel({
                                     '% Change(close)':pct_close,
@@ -107,7 +111,7 @@ for j in range(args.iters):
             lkbk_days_data = lkbk_days_data_all[today].ix[today_data.items,:,:]
             
             utils._print(log_file, 'today = %s' % today )
-            utils._print(log_file, 'top10 nasdaq components : %s' % today_data.items )
+            utils._print(log_file, 'top10 input components : %s' % today_data.items )
 
             close_name = '% Change(close)'
             liq_name = '% Change(liquidity)'
@@ -128,7 +132,7 @@ for j in range(args.iters):
             train_set = lkbk_close
             
             # kNN
-            knn = select_model.KNN(train_set, qqq)
+            knn = select_model.KNN(train_set, target)
             error = knn.error_score_k_range(test_set, args.k_range)
             for k in args.k_range:
                 error_rates[k].append(error[k])
