@@ -16,7 +16,7 @@ parser.add_argument('-k', dest='k_range', type=int, nargs='*', default=[5,6,7,8,
 parser.add_argument('-nd','--ndays', type=int, default=20, help='number of random days to be selected')
 parser.add_argument('-it','--iters', type=int, default=4, help='number of iterations')
 parser.add_argument('-p','--primary', required=True, help='primary stock (required)')
-parser.add_argument('-s','--secondary', help='secondary stock (optional)')
+parser.add_argument('-s','--secondary', nargs='*', help='list of secondary stocks (optional). Stocs are separated with space.')
 parser.add_argument('-r','--range', type=int, default=[-0.03,0.03], nargs=2, help='long/short boundaries')
 parser.add_argument('--annealingoff', type=bool, const=True, 
                                 default=False, nargs='?', help='switch to turn off annealing')
@@ -49,9 +49,10 @@ training_set = [datetime.strptime(x, '%Y%m%d').replace(hour=9, minute=30) for x 
 
 # get slice of stocks to be used
 stock_primary = target if args.primary.lower() == targetComponentIndexName else input_comp[args.primary.lower()]
-stock_secondary = None
+list_stock_secondary = []
 if args.secondary is not None:
-    stock_secondary = target if args.secondary.lower() == targetComponentIndexName else input_comp[args.secondary.lower()]
+    for stock in args.secondary:
+        list_stock_secondary.append( target ) if stock.lower() == targetComponentIndexName else list_stock_secondary.append( input_comp[ stock.lower() ] )
 
 def add_dimensions(stock):
     if stock is not None:
@@ -112,16 +113,19 @@ def add_dimensions(stock):
         return stock
         
 stock_primary = add_dimensions(stock_primary)
-stock_secondary = add_dimensions(stock_secondary)
+for stock in list_stock_secondary:
+    index = 0
+    stock = add_dimensions(stock)
 
-if stock_secondary is not None:
-    # append dimensions of secondary stock to the primary stock, not including the long and short classifiers' columns
-    cols = [args.primary+' '+x for x in stock_primary.columns[:-2]]
-    cols.append('is_long')
-    cols.append('is_short')
-    stock_primary.columns = cols
-    stock_secondary.columns = [args.secondary+' '+x for x in stock_secondary.columns]
-    stock_primary = concat([stock_primary.ix[:,:-2],stock_secondary.ix[:,:-2],stock_primary.ix[:,-2:]], axis=1)
+    if stock is not None:
+        # append dimensions of secondary stock to the primary stock, not including the long and short classifiers' columns
+        cols = [args.primary+' '+x for x in stock_primary.columns[:-2]]
+        cols.append('is_long')
+        cols.append('is_short')
+        stock_primary.columns = cols
+        stock.columns = [ args.secondary[ index ]+' '+x for x in stock.columns]
+        index = index + 1
+    stock_primary = concat([stock_primary.ix[:,:-2],stock.ix[:,:-2],stock_primary.ix[:,-2:]], axis=1)
     
 # file to backup console prints
 log_file = open(args.out_dir+'/log_'+args.dataset[:-3]+'.txt', 'w')
