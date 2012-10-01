@@ -15,8 +15,8 @@ parser.add_argument('dataset', help='the dataset to use')
 parser.add_argument('-k', dest='k_range', type=int, nargs='*', default=[5,6,7,8,9], help='k values')
 parser.add_argument('-nd','--ndays', type=int, default=20, help='number of random days to be selected')
 parser.add_argument('-it','--iters', type=int, default=4, help='number of iterations')
-parser.add_argument('-cin','--inputCompositeIndexName', dest='input_composite_index_name', required=True, help='this is input component index name')
-parser.add_argument('-cta','--targetCompositeIndexName', dest='target_composite_index_name', required=True, help='this is target component index name')
+parser.add_argument('-cin','--inputCompositeIndexName', default='nasdaq_comp', dest='input_composite_index_name', required=True, help='this is input component index name')
+parser.add_argument('-cta','--targetCompositeIndexName', default='qqq', dest='target_composite_index_name', required=True, help='this is target component index name')
 parser.add_argument('-i','--input', dest='in_dir', default='data/training', help='directory to retrieve dataset from')
 parser.add_argument('-o','--output', dest='out_dir', default='data/training', help='directory to store text reports')
 parser.add_argument('-l','--lkbk', type=int, default=3, help='number of lookback days')
@@ -149,8 +149,4 @@ utils._print(log_file, 'iterations: %s' % args.iters)
 utils._print(log_file, 'days: %s' % args.ndays)
 utils._print(log_file, DataFrame(error_rates.std(), columns=['std dev error:']).T)
 utils._print(log_file, DataFrame(error_rates.mean(), columns=['avg error:']).T)
-
-
-
-
 
